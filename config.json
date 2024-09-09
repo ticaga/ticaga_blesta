@@ -1,0 +1,11 @@
+{
+    "version": "1.0.0",
+    "name": "TicagaBlesta.name",
+    "description": "TicagaBlesta.description",
+    "authors": [
+        {
+            "name": "Ticaga Ltd",
+            "url": "https://ticaga.com"
+        }
+    ]
+}
