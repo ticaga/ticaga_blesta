@@ -1,7 +1,9 @@
 {
     "version": "1.0.0",
-    "name": "TicagaBlesta.name",
-    "description": "TicagaBlesta.description",
+    "name": "Ticaga",
+    "description": "Connects Blesta to Ticaga",
+    "license": "proprietary",
+    "type": "blesta-plugin",
     "authors": [
         {
             "name": "Ticaga Ltd",

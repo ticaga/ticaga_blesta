@@ -53,7 +53,7 @@ class TicagaBlestaPlugin extends Plugin
 
         if ($last_instance) {
             try {
-                $this->Record->drop('ticaga_blesta');
+                //$this->Record->drop('ticaga_blesta');
             } catch (Exception $e) {
                 // Error dropping... no permission?
                 $this->Input->setErrors(['db'=> ['create'=>$e->getMessage()]]);
