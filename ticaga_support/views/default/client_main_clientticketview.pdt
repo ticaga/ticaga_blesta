@@ -1,0 +1,60 @@
+<?php
+    if ($this->Html->ifSet($message)) {
+          echo $message;
+    }
+
+    // Create widget
+	$this->Widget->clear();
+	$this->Widget->setStyleSheet($this->view_dir . "css/styles.css");
+	$this->Widget->create("View Ticket Information");
+
+	$this->Form->create();
+
+?>
+<div class="inner">
+    <div class="common_box_content">
+        <table class="table">
+            <tr class="heading_row">
+                <td><span>Submitted by Client Name</span></td>
+                <td><span>Status</span></td>
+				<td class="last"><span>Ticket Subject</span></td>
+				<td class="last"><span>Replies/Original Ticket Title</span></td>
+				<td class="last"><span>Replies/Original Ticket Response</span></td>
+            </tr>
+            <?php
+                if (isset($ticket['replies']) && !empty($ticket['replies'])) {
+                    foreach ($ticket['replies'] as $reply) {
+					if (!isset($reply))
+					{
+					break;
+					} else {
+            ?>
+            <tr>
+				<td><?php echo $this->Html->safe($ticket['ticket'][0]->public_name); ?></td>
+				<td><?php echo $this->Html->safe($ticket['ticket'][0]->status); ?></td>
+				<td><?php echo $this->Html->safe($ticket['ticket'][0]->subject); ?></td>
+				<td><?php echo $this->Html->safe($reply['response_title']); ?></td>
+				<td><?php echo $this->Html->safe($reply['response_content']); ?></td>
+            </tr>
+            <?php
+                    }
+					}
+                } else {
+            ?>
+            <tr>
+				<td><?php echo $this->Html->safe($ticket['ticket'][0]->public_name); ?></td>
+				<td><?php echo $this->Html->safe($ticket['ticket'][0]->status); ?></td>
+				<td><?php echo $this->Html->safe($ticket['ticket'][0]->subject); ?></td>
+				<td><?php echo $this->Html->safe($ticket['ticket'][0]->subject); ?></td>
+				<td><?php echo $this->Html->safe($ticket['ticket'][0]->content); ?></td>
+            </tr>
+            <?php
+                }
+            ?>
+        </table>
+    </div>
+</div>
+<?php
+	$this->Form->end();
+	$this->Widget->end();
+?>

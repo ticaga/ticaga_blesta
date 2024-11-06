@@ -1,0 +1,77 @@
+<?php
+    echo $this->Html->ifSet($message);
+
+    // Create widget
+	$this->Widget->clear();
+	$this->Widget->setStyleSheet($this->view_dir . "css/styles.css");
+	$this->Widget->create("Open Guest Ticket");
+
+	$this->Form->create();
+
+?>
+<?php 
+if ($client_id == false)
+{
+?>
+<div class="inner content">
+	<div class="pad">
+		<ul>
+			<li>
+				<?php
+				if ($is_highpriority_allowed == false)
+				{
+				$this->Form->label("Priority", "priority");
+                $this->Form->fieldSelect("priority", ["medium" => "Medium", "low" => "Low"], null, array('id' => "priority"));	
+				} else {
+				$this->Form->label("Priority", "priority");
+                $this->Form->fieldSelect("priority", ["medium" => "Medium", "low" => "Low",'high' => "High", 'critical' => 'critical', 'emergency' => 'Emergency'], null, array('id' => "priority"));	
+				}
+				?>
+			</li>
+			<li>
+				<?php
+					$this->Form->label("Summary", "summary");
+					$this->Form->fieldText("summary", null, ['id' => 'summary']);
+				?>
+			</li>
+			<li>
+				<?php
+					$this->Form->label("Details", "details");
+					$this->Form->fieldTextarea("details", null, ['id' => 'details']);
+				?>
+			</li>
+			<li>
+				<?php
+                    $this->Form->label("CC Any Email? Seperate Emails with comma(,)", "cc");
+					$this->Form->fieldText("cc", null, ['id' => 'cc']);
+                ?>
+			</li>
+		</ul>
+	</div>
+	<div class="button_row">
+		<a class="btn btn-primary pull-right submit" href="#">Submit</a>
+	</div>
+</div>
+<?php
+	$this->Form->end();
+	$this->Widget->end();
+} else {
+?>
+<tr>
+                <td colspan="7">
+                    <div class="empty_section">
+                        <div class="empty_box">
+                            <div class="alert alert-warning">
+							<strong>Attention!</strong>
+							<br/>
+							You are already logged in as a known client, please click the below to go to the Client Only Departments page
+							<br/>
+							Please <a href="<?php echo $this->base_uri;?>/plugin/ticaga_support/client_main/clientTicketChooseDept">Click Here</a> to go to your client portal for opening tickets.
+							</div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+<?php
+}
+?>

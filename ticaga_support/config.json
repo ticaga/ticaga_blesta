@@ -1,0 +1,11 @@
+{
+    "version": "1.0.0",
+    "name": "TicagaSupportPlugin.name",
+    "description": "TicagaSupportPlugin.description",
+    "authors": [
+        {
+            "name": "Ticaga",
+            "url": "https://ticaga.com/"
+        }
+    ]
+}

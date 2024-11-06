@@ -1,0 +1,98 @@
+<?php
+    echo $this->Html->ifSet($message);
+	if ($client_id != false)
+{
+    // Create widget
+	$this->Widget->clear();
+	$this->Widget->setStyleSheet($this->view_dir . "css/styles.css");
+	$this->Widget->create("Open Client Ticket");
+
+	$this->Form->create(null, ['id'=>'create_ticket_ticaga', 'enctype' => 'multipart/form-data', 'class' => 'disable-on-submit']);
+
+?>
+<div class="inner content">
+	<div class="pad">
+		<ul>
+			<li>
+				<?php
+				if ($is_highpriority_allowed == false)
+				{
+				$this->Form->label("Priority", "priority");
+                $this->Form->fieldSelect("priority", ["medium" => "Medium", "low" => "Low"], null, array('id' => "priority"));	
+				} else if ($is_highpriority_allowed == true) {
+				$this->Form->label("Priority", "priority");
+                $this->Form->fieldSelect("priority", ["medium" => "Medium", "low" => "Low",'high' => "High", 'critical' => 'Critical', 'emergency' => 'Emergency'], null, array('id' => "priority"));	
+				} else {
+				$this->Form->label("Priority", "priority");
+                $this->Form->fieldSelect("priority", ["medium" => "Medium", "low" => "Low"], null, array('id' => "priority"));
+				}
+				?>
+			</li>
+			<li>
+				<?php
+					$this->Form->label("Summary", "summary");
+					$this->Form->fieldText("summary", null, ['id' => 'summary']);
+				?>
+			</li>
+			<li>
+				<?php
+					$this->Form->label("Details", "details");
+					$this->Form->fieldTextarea("details", null, ['id' => 'details']);
+				?>
+			</li>
+			<li>
+				<?php
+                    $this->Form->label("CC Any Email? Seperate Emails with comma(,)", "cc");
+					$this->Form->fieldText("cc", null, ['id' => 'cc']);
+                ?>
+			</li>
+		</ul>
+	</div>
+	<button type="submit" class="btn btn-light float-right">
+                <i class="fas fa-plus-circle"></i>Submit
+    </button>
+</div>
+<?php
+	$this->Form->end();
+	$this->Widget->end();
+} else {
+?>
+<tr>
+                <td colspan="7">
+                    <div class="empty_section">
+                        <div class="empty_box">
+                            <div class="alert alert-warning">
+							<strong>Attention!</strong>
+							<br/>
+							This is for Client Usage Only, please click the below to go to the Guests Departments page
+							<br/>
+							Please <a href="<?php echo $this->base_uri;?>/plugin/ticaga_support/client_main/guestTicketChooseDept">Click Here</a> to go to the guest portal for opening tickets.
+							</div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+<?php
+}
+?>
+<?php
+$this->Javascript->setInline("
+                $(document).ready(function() {
+                    // Initialize dropzone
+                    $(this).blestaBindDropZone();
+
+                    // Format form
+                    $('#create_ticket_ticaga').submit(function() {
+                        // Submit unchecked checkboxes
+                        $('#create_ticket_ticaga input[type=\"checkbox\"]:not(:checked)').each(function() {
+                            $(this).prop('disabled', true);
+                            $('<input>', {
+                                type: 'hidden',
+                                name: $(this).attr('name'),
+                                value: '0'
+                            }).appendTo($(this).parent());
+                        });
+                    });
+                });
+            ");
+?>

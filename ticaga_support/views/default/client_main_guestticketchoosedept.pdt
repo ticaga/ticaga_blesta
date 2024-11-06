@@ -1,0 +1,78 @@
+            <?php
+			if ($client_id == false)
+{
+            // Don't show this container when only rendering the widget section
+            if (!(isset($render_section) ? $render_section : null)) {
+            ?>
+        <div class="col-md-12">
+            <?php
+            }
+            echo (isset($message) ? $message : null);
+
+            $this->WidgetClient->clear();
+            $this->WidgetClient->setStyleSheet($this->view_dir . 'css/styles.css', ['id' => 'ticaga_support_styles']);
+            $this->WidgetClient->create($this->_('ClientTickets.index.boxtitle_tickets', true), ['id'=>'client_tickets'], (isset($render_section) ? $render_section : null));
+            $this->WidgetClient->startBody();
+            ?>
+            <div class="row">
+                <?php
+                if (!empty($depts)) {
+                    $i = 0;
+                    foreach ((isset($depts) ? $depts : []) as $department) {
+                    ?>
+                <div class="col-md-6">
+                    <div class="list-group mb-3">
+                        <a href="<?php echo $this->Html->safe($this->base_uri . 'plugin/ticaga_support/client_main/guestTicketOpen/' . (isset($department['id']) ? $department['id'] : null) . '/');?>" class="list-group-item p-3">
+                            <h4 class="border-0 pb-0"><?php echo (isset($department['department_name']) ? $this->Html->safe($department['department_name']) : null);?></h4>
+                            <?php
+                            if (!empty($department['department_description'])) {
+                                echo $this->Html->safe($department['department_description']);
+                            }
+                            ?>
+                        </a>
+                    </div>
+                </div>
+                    <?php
+                    }
+                    unset($i);
+                } else {
+                ?>
+                <div class="col-md-12">
+                    <div class="alert alert-info">
+                        <p><?php $this->_('ClientTickets.!notice.no_departments');?></p>
+                    </div>
+                </div>
+                <?php
+                }
+                ?>
+            </div>
+            <?php
+            $this->WidgetClient->endBody();
+            $this->WidgetClient->end();
+
+            // Don't show this container when only rendering the widget section
+            if (!(isset($render_section) ? $render_section : null)) {
+            ?>
+        </div>
+            <?php
+            }
+			} else {
+			?>
+			<tr>
+                <td colspan="7">
+                    <div class="empty_section">
+                        <div class="empty_box">
+                            <div class="alert alert-warning">
+							<strong>Attention!</strong>
+							<br/>
+							You are already logged in as a known client, please click the below to go to the Client Only Departments page
+							<br/>
+							Please <a href="<?php echo $this->base_uri;?>/plugin/ticaga_support/client_main/clientTicketChooseDept">Click Here</a> to go to your client portal for opening tickets.
+							</div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+			<?php
+			}
+			?>
