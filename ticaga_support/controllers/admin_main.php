@@ -33,7 +33,6 @@ class AdminMain extends TicagaSupportController
 		$count = $this->TicagaTickets->getAPIInfoByCompanyIdCount();
 		if ($count == false)
 		{
-			$this->flashMessage('message', "API Information Must be Added!", null, false);
 			$this->redirect($this->base_uri . 'plugin/ticaga_support/admin_main/addAPIInfo/');	
 		} else {
 			$tickets = $this->TicagaTickets->getTickets();

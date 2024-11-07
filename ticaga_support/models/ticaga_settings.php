@@ -136,9 +136,10 @@ class TicagaSettings extends TicagaSupportModel
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, [
-    'Accept: application/json',
-    'Authorization: Bearer ' . $apiKey,
-]);
+            'Accept: application/json',
+            'Authorization: Bearer ' . $apiKey,
+        ]);
+        
 		$result = curl_exec($ch);
 		if (curl_errno($ch)) {
 		echo 'Error:' . curl_error($ch);

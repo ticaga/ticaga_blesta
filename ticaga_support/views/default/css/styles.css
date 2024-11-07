@@ -1,4 +1,3 @@
-/* SupportManager plugin */
 .content_section .inner div.reply div.topbar p, .content_section .inner div.log div.topbar p,
 .content_section .inner div.note div.topbar p, .content_section .inner div.left p {
     padding: 0;
@@ -8,10 +7,6 @@
 p.name {
     font-weight: bold;
 }
-
-p.title {
-}
-
 textarea {
     width: 100%;
     height: 80px;
