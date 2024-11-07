@@ -145,19 +145,16 @@ class ClientMain extends TicagaSupportController
   	{
 		$client_id = $this->client_id;
 		$userExists = $this->TicagaTickets->doesUserExist();
-		$depts = $this->TicagaTickets->getDepartmentsByID(2);
 		$depts_public = $this->TicagaTickets->getDepartmentsForPublicUseOnly();
+		$depts_clients = $this->TicagaTickets->getDepartmentsForClientsUseOnly();
 	
-		if ($depts != false && $client_id != false)
+		if ($client_id != false)
 		{
-			$deptmerged = array_merge($depts,$depts_public);
+			$deptmerged = array_merge($depts_public, $depts_clients);
 			$this->set('depts', $deptmerged);
 			$this->set('client_id', $client_id);
-		} else if ($client_id == false){
-			$this->set('depts', []);
-			$this->set('client_id', false);
 		} else {
-			$this->set('depts', []);
+			$this->set('depts', $depts_public);
 			$this->set('client_id', false);
 		}
 		return $this->view->setView('client_main_clientticketchoosedept', 'default');

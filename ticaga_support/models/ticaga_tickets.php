@@ -806,6 +806,28 @@ class TicagaTickets extends TicagaSupportModel
 		return false;
 		}
     }
+
+    /**
+     * Retrieves department info for public depts only.
+     *
+     * @return Json/boolean response 
+     */
+    public function getDepartmentsForClientsUseOnly()
+    {
+		$company_id = Configure::get('Blesta.company_id');
+        $apiKey = $this->getAPIInfoByCompanyId($company_id)->api_key;
+		$apiURL = $this->getAPIInfoByCompanyId($company_id)->api_url;
+		
+		$resp = $this->TicagaSettings->callAPI("departments/2",$apiURL,$apiKey);
+		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
+		
+		if ($resp_test)
+		{
+		return json_decode($resp['response'],true);	
+		} else {
+		return false;
+		}
+    }
 	
 	/**
      * Retrieves a list of department priorities

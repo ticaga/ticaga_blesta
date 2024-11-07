@@ -1,60 +1,60 @@
 <?php
-    echo $this->Html->ifSet($message);
-
-    // Create widget
-	$this->Widget->clear();
-	$this->Widget->setStyleSheet($this->view_dir . "css/styles.css");
-	$this->Widget->create("Open Guest Ticket");
-
-	$this->Form->create();
-
+    // Don't show this container when only rendering the widget section
+    if (!(isset($render_section) ? $render_section : null)) {
 ?>
-<?php 
-if ($client_id == false)
-{
-?>
-<div class="inner content">
-	<div class="pad">
-		<ul>
-			<li>
-				<?php
-				if ($is_highpriority_allowed == false)
-				{
-				$this->Form->label("Priority", "priority");
-                $this->Form->fieldSelect("priority", ["medium" => "Medium", "low" => "Low"], null, array('id' => "priority"));	
+    <div class="col-md-12">
+    <?php
+    }
+    echo (isset($message) ? $message : null);
+
+	if ($client_id == false)
+	{
+		// Create widget
+		$this->Widget->clear();
+		$this->Widget->setStyleSheet($this->view_dir . "css/styles.css");
+		$this->WidgetClient->create($this->_('TicagaSupportPlugin.index.create_ticket', true));
+		$this->WidgetClient->startBody();
+		$this->Form->create(null, ['id'=>'create_ticket_ticaga', 'enctype' => 'multipart/form-data', 'class' => 'disable-on-submit']);
+	?>
+		<div class="form-group">
+			<?php
+				$this->Form->label($this->_('TicagaSupportPlugin.index.subject', true), "summary");
+				$this->Form->fieldText("summary", null, ['id' => 'summary', 'class' => 'form-control']);
+			?>
+		</div>
+		<div class="form-group">
+			<?php
+				$this->Form->label($this->_('TicagaSupportPlugin.index.carbon_copy',true), "cc");
+				$this->Form->fieldText("cc", null, ['id' => 'cc', 'class' => 'form-control', 'placeholder' => $this->_('TicagaSupportPlugin.index.carbon_copy_placeholder', true)]);
+			?>
+		</div>
+		<div class="form-group">
+			<?php
+				$this->Form->label($this->_('TicagaSupportPlugin.index.priority',true), "priority");
+				if ($is_highpriority_allowed == true) {
+					$priorities = ["low" => "Low", "medium" => "Medium",'high' => "High", 'critical' => 'Critical', 'emergency' => 'Emergency'];
 				} else {
-				$this->Form->label("Priority", "priority");
-                $this->Form->fieldSelect("priority", ["medium" => "Medium", "low" => "Low",'high' => "High", 'critical' => 'critical', 'emergency' => 'Emergency'], null, array('id' => "priority"));	
+					$priorities = ["low" => "Low","medium" => "Medium"];	
 				}
-				?>
-			</li>
-			<li>
-				<?php
-					$this->Form->label("Summary", "summary");
-					$this->Form->fieldText("summary", null, ['id' => 'summary']);
-				?>
-			</li>
-			<li>
-				<?php
-					$this->Form->label("Details", "details");
-					$this->Form->fieldTextarea("details", null, ['id' => 'details']);
-				?>
-			</li>
-			<li>
-				<?php
-                    $this->Form->label("CC Any Email? Seperate Emails with comma(,)", "cc");
-					$this->Form->fieldText("cc", null, ['id' => 'cc']);
+				
+                $this->Form->fieldSelect('priority', (isset($priorities) ? $priorities : null), null, ['id' => 'priority', 'class' => 'form-control']);
                 ?>
-			</li>
-		</ul>
-	</div>
-	<div class="button_row">
-		<a class="btn btn-primary pull-right submit" href="#">Submit</a>
-	</div>
-</div>
-<?php
-	$this->Form->end();
-	$this->Widget->end();
+		</div>
+		<div class="form-group">
+            <?php
+                $this->Form->label($this->_('TicagaSupportPlugin.index.ticket_response',true), 'details');
+                $this->Form->fieldTextarea('details', null, ['id' => 'details', 'rows' => 5, 'class' => 'form-control']);
+				//$this->Form->fieldTextarea('details', null, ['id' => 'details', 'rows' => 5, 'class' => 'form-control', 'data-markdown-editor' => '']);
+            ?>
+        </div>
+		<button type="submit" class="btn btn-light float-right">
+            <?php echo $this->_('TicagaSupportPlugin.index.submit', true);?>
+        </button>
+    <?php
+        $this->Form->end();
+        $this->WidgetClient->endBody();
+        $this->WidgetClient->end();
+	
 } else {
 ?>
 <tr>
