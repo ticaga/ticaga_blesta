@@ -38,13 +38,13 @@ class ClientMain extends TicagaSupportController
     {
 		$client_id = $this->client_id;
 		$userExists = $this->TicagaTickets->doesUserExist();
-		$departments_all = $this->TicagaTickets->getDepartmentsAll();
 
 		if ($userExists == false && $client_id == false)
 		{
 			$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments/');
 		} else if($userExists == false && $client_id != false) {
-			$tickets = $this->TicagaTickets->getTicketsByUserID($client_id);
+			$tickets = $this->TicagaTickets->getTicketsByUserEmail($client_id);
+			$departments_all = $this->TicagaTickets->getDepartmentsAll();
 			if ($tickets == false)
 			{
 				$this->set('tickets', []);
@@ -92,74 +92,6 @@ class ClientMain extends TicagaSupportController
 			return $this->renderAjaxWidgetIfAsync(false);
 		}
   	}
-   
-   /**
-     * Returns the view for showing guest departments for submitting tickets to.
-     */
-    public function guestTicketChooseDept()
-  	{
-		$client_id = $this->client_id;
-		$userExists = $this->TicagaTickets->doesUserExist();
-		$depts = $this->TicagaTickets->getDepartmentsForPublicUseOnly();
-		
-		if ($depts != false)
-		{
-			$this->set('depts', $depts);
-			$this->set('client_id', $client_id);
-		} else {
-			$this->set('depts', []);
-			$this->set('client_id', false);
-		}
-		return $this->view->setView('client_main_guestticketchoosedept', 'default');
-		return $this->renderAjaxWidgetIfAsync(false);
-  	}
-  
-  /**
-     * Returns the view for showing guest departments for submitting tickets to.
-     */
-    public function guestTicketOpen()
-  	{
-		$client_id = $this->client_id ?? false;
-		$userExists = $this->TicagaTickets->doesUserExist();
-		$deptinfo = $this->TicagaTickets->getDepartmentsByIDNonArray($this->get[0]);
-		$prioritystatuses = $this->TicagaTickets->getPrioritiesHighAllowed($this->get[0]);
-		
-		if ($deptinfo)
-		{
-			$deptjsondec = $deptinfo;
-			if ($deptjsondec[0]->is_public == 1)
-			{
-				$this->set('department_id', $this->get[0]);
-				$this->set('client_id', $client_id);
-				$this->set('is_highpriority_allowed', $prioritystatuses);
-
-				if (!empty($this->post)) {
-					$dept_id = $this->get[0];
-					$priority = $this->post['priority'];
-					$subject = $this->post['summary'];
-					$content = $this->post['details'];
-					$cid = 0;
-					$cc = $this->post['cc'];
-					$ccid = [];
-
-					if (count($cc) > 1)
-					{
-						$ccid = explode(",",$cc);
-					} else {
-						$ccid = [0 => $cc];
-					}
-
-					$submitarray = ["department_id" => $dept_id, "client_id" => $cid, "priority" => $priority, "summary" => $subject, "details" => $details, "cc" => $ccid];
-					$ticketsubmit = $this->TicagaTickets->add($submitarray);	
-				}
-			} else {
-				$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments');
-			}
-		}
-
-		return $this->view->setView('client_main_guestticketopen', 'default');
-		return $this->renderAjaxWidgetIfAsync(false);
-  	}
 	
 	/**
      * Returns the view for showing all users whether guest or client for submitting tickets to.
@@ -185,19 +117,40 @@ class ClientMain extends TicagaSupportController
 					$priority = $this->post['priority'];
 					$subject = $this->post['summary'];
 					$content = $this->post['details'];
-					$email = $this->post['email'];
+					$email = $this->post['email'] ?? "";
 					$cid = 0;
 					$cc = $this->post['cc'];
 					$ccid = [];
-
+					
+					if ($email == "")
+					{
+					$this->flashMessage('error', "Email is Required!", null, false);
+					$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/submitTicket/' . $this->get[0]);
+					return;
+					}
+					
+					
+					if (gettype($cc) == "array")
+					{
 					if (count($cc) > 1)
 					{
 						$ccid = explode(",",$cc);
 					} else {
 						$ccid = [0 => $cc];
 					}
+					} elseif (gettype($cc) == "string") {
+					$cctest = explode(",",$cc);
+					if (count($cctest) > 1)
+					{
+						$ccid = explode(",",$cc);
+					} else {
+						$ccid = [0 => $cc];
+					}
+					} else {
+					$ccid = [];
+					}
 
-					$submitarray = ["department_id" => $dept_id, "client_id" => $cid, "priority" => $priority, "summary" => $subject, "details" => $content, "cc" => $ccid, 'client_email' => $email];
+					$submitarray = ["department_id" => $dept_id, "client_id" => $cid, "priority" => $priority, "summary" => $subject, "details" => $content, "cc" => $ccid, 'client_email' => $email,'public_name' => $email];
 					$ticketsubmit = $this->TicagaTickets->add($submitarray);	
 				}
 			} else {
@@ -214,6 +167,7 @@ class ClientMain extends TicagaSupportController
 				$this->set('client_id', $client_id);
 				$this->set('is_highpriority_allowed', $prioritystatuses);
 				$client_var = $this->Clients->get($client_id);
+				$client_name = $client_var->first_name . " " . $client_var->last_name;
 				$client_email = $client_var->email;
 
 				if (!empty($this->post)) {
@@ -233,15 +187,15 @@ class ClientMain extends TicagaSupportController
 						$ccid = [0 => $cc];
 					}
 
-					$submitarray = ["department_id" => $dept_id, "client_id" => $cid, "priority" => $priority, "summary" => $subject, "details" => $content, "cc" => $ccid, 'client_email' => $email];
+					$submitarray = ["department_id" => $dept_id, "client_id" => $cid, "priority" => $priority, "summary" => $subject, "details" => $content, "cc" => $ccid, 'client_email' => $email, 'public_name' => $client_name];
 					$ticketsubmit = $this->TicagaTickets->add($submitarray);
 					if ($ticketsubmit != false)
 					{
-					die(print_r($ticketsubmit,true));
 					$this->flashMessage('message', "Ticket Submitted", null, false);
 					$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');	
 					} else {
-						die(print_r($ticketsubmit,true));
+					$this->flashMessage('error', "Failure Submitting Ticket", null, false);
+					$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments');
 					}
 				}
 			} else {
@@ -259,29 +213,6 @@ class ClientMain extends TicagaSupportController
   	}
   
   	/**
-     * Returns the view for showing client departments for submitting tickets to.
-     */
-    public function clientTicketChooseDept()
-  	{
-		$client_id = $this->client_id;
-		$userExists = $this->TicagaTickets->doesUserExist();
-		$depts_public = $this->TicagaTickets->getDepartmentsForPublicUseOnly();
-		$depts_clients = $this->TicagaTickets->getDepartmentsForClientsUseOnly();
-	
-		if ($client_id != false)
-		{
-			$deptmerged = array_merge($depts_public, $depts_clients);
-			$this->set('depts', $deptmerged);
-			$this->set('client_id', $client_id);
-		} else {
-			$this->set('depts', $depts_public);
-			$this->set('client_id', false);
-		}
-		return $this->view->setView('client_main_clientticketchoosedept', 'default');
-		return $this->renderAjaxWidgetIfAsync(false);
-	}
-  
-  	/**
      * Returns the view for showing syncing client account.
      */
     public function syncClientAccount()
@@ -289,56 +220,6 @@ class ClientMain extends TicagaSupportController
 		$client_id = $this->client_id;
 		$userExists = $this->TicagaTickets->doesUserExist();
 		return $this->view->setView('client_main_syncclientaccount', 'default');
-		return $this->renderAjaxWidgetIfAsync(false);
-  	}
-  
- 	/**
-     * Returns the view for showing client departments for submitting tickets to.
-     */
-    public function clientTicketOpen()
-  	{
-		$client_id = $this->Session->read('blesta_client_id') ?? false;
-		$userExists = $this->TicagaTickets->doesUserExist();
-		$deptinfo = $this->TicagaTickets->getDepartmentsByID($this->get[0]);
-		$prioritystatuses = $this->TicagaTickets->getPrioritiesHighAllowed($this->get[0]);
-		
-		if ($deptinfo)
-		{
-			$deptjsondec = json_decode($deptinfo['response']);
-
-			if ($client_id != false)
-			{
-				$this->set('department_id', $this->get[0]);
-				$this->set('client_id', $client_id);
-				$this->set('is_highpriority_allowed', $prioritystatuses);
-
-				if (!empty($this->post)) {
-					$dept_id = $this->get[0];
-					$priority = $this->post['priority'];
-					$subject = $this->post['summary'];
-					$content = $this->post['details'];
-					$cid = 0;
-					$cc = $this->post['cc'];
-					$ccid = [];
-
-					if ($cc != "" || !empty($cc))
-					{
-						$ccid = explode(",",$cc);
-					} else {
-						$ccid = [0 => $cc];
-					}
-
-					$submitarray = ["department_id" => $dept_id, "client_id" => $cid, "priority" => $priority, "summary" => $subject, "details" => $details, "cc" => $ccid];
-					$ticketsubmit = $this->TicagaTickets->add($submitarray);
-					$this->flashMessage('message', "Ticket Submitted", null, false);
-					$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');
-				}
-			} else {
-				$this->set('depts', []);
-				$this->set('client_id', false);
-			}
-		}
-		return $this->view->setView('client_main_clientticketopen', 'default');
 		return $this->renderAjaxWidgetIfAsync(false);
   	}
   
@@ -355,7 +236,7 @@ class ClientMain extends TicagaSupportController
 	
 		if ($ticket == false || $ticketBelongToClient == false)
 		{
-			$this->flashMessage('message', "Sorry, No Ticket by that ID Exists or you have no rights to view it.", null, false);
+			$this->flashMessage('error', "Sorry, No Ticket by that ID Exists or you have no rights to view it.", null, false);
 			$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');	
 			$this->set('ticket', []);
 		} else {

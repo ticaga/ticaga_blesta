@@ -22,7 +22,7 @@
 				<td class="last"><span>Replies/Original Ticket Response</span></td>
             </tr>
             <?php
-                if (isset($ticket['replies'])) {
+                if (isset($ticket['replies']) && count($ticket['replies']) > 0) {
                     foreach ($ticket['replies'] as $reply) {
 					if (!isset($reply))
 					{
@@ -39,9 +39,19 @@
             <?php
                     }
 					}
-                } else {
+                } elseif (isset($ticket['ticket'])) {
             ?>
             <tr>
+				<td><?php echo $this->Html->safe($ticket['ticket'][0]->public_name); ?></td>
+				<td><?php echo $this->Html->safe($ticket['ticket'][0]->status); ?></td>
+				<td><?php echo $this->Html->safe($ticket['ticket'][0]->subject); ?></td>
+				<td>No Response Title So Far</td>
+				<td><?php echo $this->Html->safe($ticket['ticket'][0]->content); ?></td>
+            </tr>
+            <?php
+                } else {
+            ?>
+			<tr>
                 <td colspan="7">
                     <div class="empty_section">
                         <div class="empty_box">
@@ -50,9 +60,9 @@
                     </div>
                 </td>
             </tr>
-            <?php
-                }
-            ?>
+			<?php 
+				}
+			?>
         </table>
     </div>
 </div>

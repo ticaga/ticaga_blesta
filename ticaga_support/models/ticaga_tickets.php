@@ -27,7 +27,7 @@ class TicagaTickets extends TicagaSupportModel
 		// Load components
         Loader::loadComponents($this, ['Input', 'Record', 'Session']);
 		// Load models
-        Loader::loadModels($this, ['Staff', 'Companies', 'TicagaSupport.TicagaSettings']);
+        Loader::loadModels($this, ['Staff', 'Companies', 'TicagaSupport.TicagaSettings', 'Clients']);
     }
 	
 	public function getAPIInfoByCompanyId(){
@@ -85,15 +85,16 @@ class TicagaTickets extends TicagaSupportModel
 		$priority = $vars['priority'] ?? "low";
 		$details = $vars["details"] ?? "";
 		$email = $vars["client_email"] ?? "";
+		$name = $vars["public_name"] ?? "";
 		$cc = $vars["cc"] ?? "null";
 		$ipaddress = $this->get_client_ip_server();
 		
 		if ($cc != "null")
 		{
 		$ccid = implode(",",$cc);
-		$callvars = array('user_id' => $client_id, "subject" => $vars['summary'], "priority" => $priority, "content" => $details, "cc" => $ccid, "assigned" => "0", "department_id" => $department_id, "ip_address" => $ipaddress, 'public_email' => $email);	
+		$callvars = array('user_id' => $client_id, "subject" => $vars['summary'], "priority" => $priority, "content" => $details, "cc" => $ccid, "assigned" => "0", "department_id" => $department_id, "ip_address" => $ipaddress, 'public_email' => $email, 'public_name' => $name);	
 		} else {
-		$callvars = array('user_id' => $client_id, "subject" => $vars['summary'], "priority" => $priority, "content" => $details, "assigned" => "0", "department_id" => $department_id, "ip_address" => $ipaddress, 'public_email' => $email);
+		$callvars = array('user_id' => $client_id, "subject" => $vars['summary'], "priority" => $priority, "content" => $details, "assigned" => "0", "department_id" => $department_id, "ip_address" => $ipaddress, 'public_email' => $email, 'public_name' => $name);
 		}
 		
 		$resp = $this->TicagaSettings->callAPIPost("tickets/open/" . $department_id,$callvars, $apiURL,$apiKey);
@@ -393,7 +394,7 @@ class TicagaTickets extends TicagaSupportModel
 		}
 		$userinfo = $this->getUserInfo($ticket_info[0]->user_id);
 		$deptinfo = $this->getDepartmentsByID($ticket_info[0]->department_id);
-		return array("ticket" => $ticket_info, "replies" => $replies_array, "userinfo" => $userinfo, "dept_info" => $deptinfo['response']);
+		return array("ticket" => $ticket_info, "replies" => $replies_array, "userinfo" => $userinfo, "dept_info" => $deptinfo);
 		} else {
 		return false;
 		}
@@ -453,12 +454,17 @@ class TicagaTickets extends TicagaSupportModel
 		{
 			return false;
 		} else {
-			if ($ticket_info[0]->user_id == $client_id)
+			$client_var = $this->Clients->get($client_id);
+			$client_email = $client_var->email ?? false;
+		  if ($client_email != false)
+		  {
+			if ($ticket_info[0]->public_email == $client_email)
 			{
 				return true;
 			} else {
 				return false;
 			}
+		  }
 		}
 		} else {
 		return false;
@@ -686,6 +692,34 @@ class TicagaTickets extends TicagaSupportModel
 			return false;
 		} else {
 		$resp = $this->TicagaSettings->callAPI("tickets/user/" . $client_id, $apiURL,$apiKey);
+		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
+		if ($resp_test)
+		{
+		$jsondec = json_decode($resp['response']);
+		$dept_resp = $this->TicagaSettings->callAPI("departments/byid/" . $jsondec[0]->department_id, $apiURL,$apiKey);
+		$jsondec_dept_resp = json_decode($dept_resp['response']);
+		return $jsondec;
+		} else {
+		return false;
+		}
+	  }
+    }
+	
+	/**
+     * Returns a value if user exists in Ticaga or not.
+     */
+    public function getTicketsByUserEmail($client_id)
+    {
+        $apiKey = $this->getAPIInfoByCompanyId()->api_key;
+		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
+		$ipaddress = $this->get_client_ip_server();
+		$clients_var = $this->Clients->get($client_id);
+		$client_email = $clients_var->email ?? false;
+		if ($client_id == null || $client_email == false)
+		{
+			return false;
+		} else {
+		$resp = $this->TicagaSettings->callAPI("tickets/userbyemail/" . $client_email, $apiURL,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		if ($resp_test)
 		{

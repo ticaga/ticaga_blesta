@@ -16,6 +16,9 @@
 		$this->WidgetClient->startBody();
 		$this->Form->create(null, ['id'=>'create_ticket_ticaga', 'enctype' => 'multipart/form-data', 'class' => 'disable-on-submit']);
 	?>
+		<?php
+		$this->Form->fieldHidden('client_id', $this->Html->ifSet($vars->client_id, 0));
+		?>
 		<div class="form-group">
 			<?php
 				$this->Form->label($this->_('TicagaSupportPlugin.index.subject', true), "summary");
