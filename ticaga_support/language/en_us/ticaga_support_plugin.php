@@ -31,3 +31,9 @@ $lang['TicagaSupportPlugin.index.carbon_copy_placeholder'] = "Seperate Emails wi
 $lang['TicagaSupportPlugin.index.priority'] = "Priority";
 $lang['TicagaSupportPlugin.index.ticket_response'] = "Ticket response";
 $lang['TicagaSupportPlugin.index.submit'] = "Create";
+
+// Ticket Overview
+$lang['TicagaSupportPlugin.index.tickets_overview'] = "Tickets Overview";
+$lang['TicagaSupportPlugin.index.department'] = "Department";
+$lang['TicagaSupportPlugin.index.status'] = "Status";
+$lang['TicagaSupportPlugin.index.create_ticket'] = "Create a ticket";

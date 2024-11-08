@@ -55,23 +55,29 @@
         $this->WidgetClient->endBody();
         $this->WidgetClient->end();
 	
-} else {
-?>
-<tr>
-                <td colspan="7">
-                    <div class="empty_section">
-                        <div class="empty_box">
-                            <div class="alert alert-warning">
-							<strong>Attention!</strong>
-							<br/>
-							You are already logged in as a known client, please click the below to go to the Client Only Departments page
-							<br/>
-							Please <a href="<?php echo $this->base_uri;?>/plugin/ticaga_support/client_main/clientTicketChooseDept">Click Here</a> to go to your client portal for opening tickets.
-							</div>
-                        </div>
+		// Don't show this container when only rendering the widget section
+		if (!(isset($render_section) ? $render_section : null) && !(isset($is_ajax) ? $is_ajax : null)) {
+	?>
+	</div>
+	<?php
+		}
+	} else {
+	?>
+	<tr>
+            <td colspan="7">
+                <div class="empty_section">
+                    <div class="empty_box">
+                        <div class="alert alert-warning">
+						<strong>Attention!</strong>
+						<br/>
+						You are already logged in as a known client, please click the below to go to the Client Only Departments page
+						<br/>
+						Please <a href="<?php echo $this->base_uri;?>/plugin/ticaga_support/client_main/clientTicketChooseDept">Click Here</a> to go to your client portal for opening tickets.
+						</div>
                     </div>
-                </td>
-            </tr>
+                </div>
+            </td>
+        </tr>
 <?php
 }
 ?>
