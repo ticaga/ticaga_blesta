@@ -81,18 +81,29 @@ class TicagaTickets extends TicagaSupportModel
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
 		$department_id = $vars['department_id'];
-		$client_id = $vars['client_id'];
-		$status = $vars['status'] ?? "open";
+		$client_id = $vars['client_id'] ?? $vars['client_email'];
 		$priority = $vars['priority'] ?? "low";
 		$details = $vars["details"] ?? "";
+		$email = $vars["client_email"] ?? "";
 		$cc = $vars["cc"] ?? "null";
 		$ipaddress = $this->get_client_ip_server();
 		
-		$callvars = array('user_id' => $client_id, "subject" => $vars['summary'], "status" => $status, "priority" => $priority, "content" => $details, "cc" => $cc, "assigned" => "0", "department_id" => $department_id, "ip_address" => $ipaddress);
+		if ($cc != "null")
+		{
+		$ccid = implode(",",$cc);
+		$callvars = array('user_id' => $client_id, "subject" => $vars['summary'], "priority" => $priority, "content" => $details, "cc" => $ccid, "assigned" => "0", "department_id" => $department_id, "ip_address" => $ipaddress, 'public_email' => $email);	
+		} else {
+		$callvars = array('user_id' => $client_id, "subject" => $vars['summary'], "priority" => $priority, "content" => $details, "assigned" => "0", "department_id" => $department_id, "ip_address" => $ipaddress, 'public_email' => $email);
+		}
 		
 		$resp = $this->TicagaSettings->callAPIPost("tickets/open/" . $department_id,$callvars, $apiURL,$apiKey);
-		
-        return $resp;
+		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
+		if ($resp_test)
+		{
+		return json_decode($resp['response']);	
+		} else {
+		return false;
+		}
     }
 
     /**
@@ -154,60 +165,8 @@ class TicagaTickets extends TicagaSupportModel
      */
     public function editMultiple(array $ticket_ids, array $vars)
     {
-        // Determine whether to apply vars to all tickets, or whether each ticket has separate vars
-        $separate_vars = (isset($vars[0]) && is_array($vars[0]));
-
-        $rules = [
-            'tickets' => [
-                // Check whether the tickets can be assigned to the given service(s)
-                'service_matches' => [
-                    'rule' => [[$this, 'validateServicesMatchTickets'], $ticket_ids],
-                    'message' => $this->_('TicagaTickets.!error.tickets.service_matches')
-                ],
-                // Check whether the tickets can be assigned to the given department(s)
-                'department_matches' => [
-                    'rule' => [[$this, 'validateDepartmentsMatchTickets'], $ticket_ids],
-                    'message' => $this->_('TicagaTickets.!error.tickets.department_matches')
-                ]
-            ]
-        ];
-
-        $multiple_vars = ['tickets' => $vars];
-
-        $this->Input->setRules($rules);
-        if ($this->Input->validates($multiple_vars)) {
-            // Validate each ticket individually
-            foreach ($ticket_ids as $key => $ticket_id) {
-                // Each ticket has separate vars
-                $temp_vars = $vars;
-                if ($separate_vars) {
-                    // Since all fields are optional, we don't need to require any vars be given for every ticket
-                    // and they will simply not be updated at all
-                    if (!isset($vars[$key]) || empty($vars[$key])) {
-                        $vars[$key] = [];
-                    }
-
-                    $temp_vars = $vars[$key];
-                }
-
-                // Validate an individual ticket
-                $temp_vars['ticket_id'] = $ticket_id;
-                $this->Input->setRules($this->getRules($temp_vars, true));
-                if (!$this->Input->validates($temp_vars)) {
-                    return;
-                }
-            }
-
-            // All validation passed, update all tickets accordingly
-            foreach ($ticket_ids as $key => $ticket_id) {
-                $temp_vars = $vars;
-                if ($separate_vars) {
-                    $temp_vars = $vars[$key];
-                }
-
-                $this->edit($ticket_id, $temp_vars);
-            }
-        }
+		//Not Implemented Yet
+        return false;
     }
 
     /**
@@ -731,7 +690,7 @@ class TicagaTickets extends TicagaSupportModel
 		if ($resp_test)
 		{
 		$jsondec = json_decode($resp['response']);
-		$dept_resp = $this->TicagaSettings->callAPI("departments/byid/" . $resp->department_id, $apiURL,$apiKey);
+		$dept_resp = $this->TicagaSettings->callAPI("departments/byid/" . $jsondec[0]->department_id, $apiURL,$apiKey);
 		$jsondec_dept_resp = json_decode($dept_resp['response']);
 		return $jsondec;
 		} else {
@@ -758,6 +717,52 @@ class TicagaTickets extends TicagaSupportModel
 		if ($resp_test)
 		{
 		return json_decode($resp['response'],true);	
+		} else {
+		return false;
+		}
+    }
+	
+	/**
+     * Retrieves department info by department ID
+     *
+     * @param int $departmentid The ID of the department whose department info to fetch
+     * @return Json/boolean response 
+     */
+    public function getDepartmentsByIDArrayNonJsonDecoded($departmentid)
+    {
+		$company_id = Configure::get('Blesta.company_id');
+        $apiKey = $this->getAPIInfoByCompanyId($company_id)->api_key;
+		$apiURL = $this->getAPIInfoByCompanyId($company_id)->api_url;
+		
+		$resp = $this->TicagaSettings->callAPI("departments/byid/" . $departmentid,$apiURL,$apiKey);
+		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
+		
+		if ($resp_test)
+		{
+		return $resp['response'];	
+		} else {
+		return false;
+		}
+    }
+	
+	/**
+     * Retrieves department info by department ID
+     *
+     * @param int $departmentid The ID of the department whose department info to fetch
+     * @return Json/boolean response 
+     */
+    public function getDepartmentsByIDNonArray($departmentid)
+    {
+		$company_id = Configure::get('Blesta.company_id');
+        $apiKey = $this->getAPIInfoByCompanyId($company_id)->api_key;
+		$apiURL = $this->getAPIInfoByCompanyId($company_id)->api_url;
+		
+		$resp = $this->TicagaSettings->callAPI("departments/byid/" . $departmentid,$apiURL,$apiKey);
+		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
+		
+		if ($resp_test)
+		{
+		return json_decode($resp['response']);	
 		} else {
 		return false;
 		}
@@ -838,8 +843,8 @@ class TicagaTickets extends TicagaSupportModel
     public function getPriorities(?int $department_id = null)
     {
             $priorities = [];
-			$deptidinfo = $this->getDepartmentsByID($department_id);
-			$jsondec = json_decode($deptidinfo['response']);
+			$deptidinfo = $this->getDepartmentsByIDNonArray($department_id);
+			$jsondec = $deptidinfo;
 			if ($jsondec[0]->allows_high_priority == '0')
 			{
 			$priorities = [
@@ -868,8 +873,8 @@ class TicagaTickets extends TicagaSupportModel
     public function getPrioritiesHighAllowed(?int $department_id = null)
     {
             $priorities = [];
-			$deptidinfo = $this->getDepartmentsByID($department_id);
-			$jsondec = json_decode($deptidinfo['response']);
+			$deptidinfo = $this->getDepartmentsByIDNonArray($department_id);
+			$jsondec = $deptidinfo;
 			if ($jsondec[0]->allows_high_priority == '0')
 			{
 			return false;

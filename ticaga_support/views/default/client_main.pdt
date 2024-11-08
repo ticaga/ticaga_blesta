@@ -8,7 +8,7 @@
 ?>
 <div class="inner">
     <div class="links_row">
-        <a class="btn btn-default btn-sm pull-right" href="<?php echo $this->base_uri; ?>plugin/ticaga_support/client_main/clientTicketChooseDept/"><i class="fa fa-plus"></i></a>
+        <a class="btn btn-default btn-sm pull-right" href="<?php echo $this->base_uri; ?>plugin/ticaga_support/client_main/departments/"><i class="fa fa-plus"></i></a>
     </div>
     <div class="common_box_content">
         <table class="table">
