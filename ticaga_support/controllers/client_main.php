@@ -39,13 +39,13 @@ class ClientMain extends TicagaSupportController
     {
 		$client_id = $this->client_id;
 		$userExists = $this->TicagaTickets->doesUserExist();
+		$departments_all = $this->TicagaTickets->getDepartmentsAll();
 
 		if ($userExists == false && $client_id == false)
 		{
 			$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/guestTicketChooseDept/');
 		} else if($userExists == false && $client_id != false) {
 			$tickets = $this->TicagaTickets->getTicketsByUserID($client_id);
-			$departments_all = $this->TicagaTickets->getDepartmentsAll();
 			if ($tickets == false)
 			{
 				$this->set('tickets', []);
