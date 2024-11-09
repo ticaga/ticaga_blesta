@@ -22,7 +22,7 @@
                     ?>
                 <div class="col-md-6">
                     <div class="list-group mb-3">
-                        <a href="<?php echo $this->Html->safe($this->base_uri . 'plugin/ticaga_support/client_main/guestTicketOpen/' . (isset($department['id']) ? $department['id'] : null) . '/');?>" class="list-group-item p-3">
+                        <a href="<?php echo $this->Html->safe($this->base_uri . 'plugin/ticaga_support/client_main/submitTicket/' . (isset($department['id']) ? $department['id'] : null) . '/');?>" class="list-group-item p-3">
                             <h4 class="border-0 pb-0"><?php echo (isset($department['department_name']) ? $this->Html->safe($department['department_name']) : null);?></h4>
                             <?php
                             if (!empty($department['department_description'])) {

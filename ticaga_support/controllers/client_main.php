@@ -157,12 +157,11 @@ class ClientMain extends TicagaSupportController
 				$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments');
 			}
 		} else {
-		if ($deptinfo && $client_id != false)
+		if ($deptinfo && $client_id != false && $deptinfo[0]->is_disabled == 0)
 		{
 			$deptjsondec = $deptinfo;
 
-			if ($client_id != false)
-			{
+		
 				$this->set('department_id', $this->get[0]);
 				$this->set('client_id', $client_id);
 				$this->set('is_highpriority_allowed', $prioritystatuses);
@@ -198,10 +197,6 @@ class ClientMain extends TicagaSupportController
 					$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments');
 					}
 				}
-			} else {
-				$this->set('depts', []);
-				$this->set('client_id', false);
-			}
 			return $this->view->setView('client_main_submitticket', 'default');
 			return $this->renderAjaxWidgetIfAsync(false);
 		} else {
