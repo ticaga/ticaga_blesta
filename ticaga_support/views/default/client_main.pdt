@@ -1,27 +1,34 @@
 <?php
-      if ($this->Html->ifSet($message)) {
-          echo $message;
-      }
-      $this->Widget->clear();
-      $this->Widget->create("Support Tickets Overview");
-      $this->Form->create();
+    // Don't show this container when only rendering the widget section
+    if (!(isset($render_section) ? $render_section : null)) {
+?>
+    <div class="col-md-12">
+    <?php
+    }
+        echo (isset($message) ? $message : null);
+
+        $this->Widget->clear();
+        $link_buttons = [
+            ['name'=>$this->_('TicagaSupportPlugin.index.create_ticket', true), 'attributes'=>['href'=>$this->Html->safe($this->base_uri . 'plugin/ticaga_support/client_main/departments/')]]
+        ];
+        $this->WidgetClient->setLinkButtons($link_buttons);
+        $this->WidgetClient->create($this->_('TicagaSupportPlugin.index.tickets_overview', true));
+	    $this->WidgetClient->startBody();
+        $this->Form->create();
 ?>
 <div class="inner">
-    <div class="links_row">
-        <a class="btn btn-default btn-sm pull-right" href="<?php echo $this->base_uri; ?>plugin/ticaga_support/client_main/departments/"><i class="fa fa-plus"></i></a>
-    </div>
-    <div class="common_box_content">
-        <table class="table">
-            <tr class="heading_row">
-                <td><span>Ticket Client Name</span></td>
-                <td><span>Status</span></td>
-				<td><span>Ticket Subject</span></td>
-				<td class="last"><span>Department Name</span></td>
-				<td class="last"><span>Priority</span></td>
-                <td class="last"><span>Options</span></td>
-            </tr>
+    <div class="table-responsive">
+        <table class="table table-curved table-striped">
+            <thead>
+                <tr class="heading_row">
+                    <th><?php echo $this->_('TicagaSupportPlugin.index.subject', true);?></th>
+                    <th><?php echo $this->_('TicagaSupportPlugin.index.department', true);?></th>
+                    <th><?php echo $this->_('TicagaSupportPlugin.index.priority', true);?></th>
+                    <th><?php echo $this->_('TicagaSupportPlugin.index.status', true);?></th>
+                    <th class="last"></th>
+                </tr>
+            </thead>
             <?php
-				$department_name;
                 if ($this->Html->ifSet($tickets)) {
                     foreach ($tickets as $ticket) {
 					if (!isset($ticket))
@@ -38,27 +45,18 @@
 						}
 					}
 				}
-				if ($ticket->status == "open")
-				{
-					$ticketstatus = $this->Html->safe("Open");
-				} else if ($ticket->status == "closed") {
-					$ticketstatus = $this->Html->safe("Closed");
-				} else if ($ticket->status == "Awaiting Reply") {
-					$ticketstatus = $this->Html->safe("Awaiting Reply");
-				} else if ($ticket->status == "In Progress") {
-					$ticketstatus = $this->Html->safe("In Progress");
-				}
             ?>
-            <tr>
-                <td><?php echo $this->Html->safe($ticket->public_email); ?></td>
-                <td><?php echo $this->Html->safe($ticketstatus); ?></td>
-				<td><?php echo $this->Html->safe($ticket->subject); ?></td>
-				<td><?php echo $this->Html->safe($department_name); ?></td>
-				<td><?php echo $this->Html->safe($ticket->priority); ?></td>
-                <td>
-                    <a href="<?php echo $this->base_uri; ?>plugin/ticaga_support/client_main/clientViewTicket/<?php echo $this->Html->safe($ticket->id); ?>/">View Ticket</a>
-                </td>
-            </tr>
+            <tbody>
+                <tr>
+                    <td><?php echo $this->Html->safe($ticket->subject); ?></td>
+                    <td><?php echo ucwords($this->Html->safe($department_name)); ?></td>
+                    <td><?php echo ucwords($this->Html->safe($ticket->priority)); ?></td>
+                    <td><?php echo ucwords($this->Html->safe($ticket->status)); ?></td>
+                    <td>
+                        <a href="<?php echo $this->base_uri; ?>plugin/ticaga_support/client_main/clientViewTicket/<?php echo $this->Html->safe($ticket->id); ?>/" class="btn btn-xs btn-light float-right">View Ticket</a>
+                    </td>
+                </tr>
+            </tbody>
             <?php
                     }
 					}
@@ -79,10 +77,16 @@
         </table>
     </div>
 </div>
-<?php
+    <?php
       $this->Form->end();
+      // Don't show this container when only rendering the widget section
+      if (!(isset($render_section) ? $render_section : null) && !(isset($is_ajax) ? $is_ajax : null)) {
+    ?>
+    </div>
+    <?php
+        }
       $this->Widget->end();
-?>
+    ?>
 <script type="text/javascript">
     // Blesta Modal Confirm
      $('a.delete[rel]').blestaModalConfirm({
