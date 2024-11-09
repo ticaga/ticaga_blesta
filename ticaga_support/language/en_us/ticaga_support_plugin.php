@@ -26,9 +26,15 @@ $lang['TicagaSupportPlugin.card_client.getClientTicketsTotal'] = 'Tickets';
 // Open a ticket
 $lang['TicagaSupportPlugin.index.create_ticket'] = 'Create a ticket';
 $lang['TicagaSupportPlugin.index.subject'] = "Subject";
-$lang['TicagaSupportPlugin.index.email'] = "Email";
+$lang['TicagaSupportPlugin.index.email_address'] = "Email Address";
 $lang['TicagaSupportPlugin.index.carbon_copy'] = "CC";
 $lang['TicagaSupportPlugin.index.carbon_copy_placeholder'] = "Seperate Emails with comma(,)";
 $lang['TicagaSupportPlugin.index.priority'] = "Priority";
 $lang['TicagaSupportPlugin.index.ticket_response'] = "Ticket response";
 $lang['TicagaSupportPlugin.index.submit'] = "Create";
+
+// Ticket Overview
+$lang['TicagaSupportPlugin.index.tickets_overview'] = "Tickets Overview";
+$lang['TicagaSupportPlugin.index.department'] = "Department";
+$lang['TicagaSupportPlugin.index.status'] = "Status";
+$lang['TicagaSupportPlugin.index.create_ticket'] = "Create a ticket";

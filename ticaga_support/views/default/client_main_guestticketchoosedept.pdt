@@ -1,4 +1,4 @@
-            <?php
+  <?php
 			if ($client_id == false)
 {
             // Don't show this container when only rendering the widget section
@@ -67,7 +67,7 @@
 							<br/>
 							You are already logged in as a known client, please click the below to go to the Client Only Departments page
 							<br/>
-							Please <a href="<?php echo $this->base_uri;?>/plugin/ticaga_support/client_main/departments">Click Here</a> to go to your client portal for opening tickets.
+							Please <a href="<?php echo $this->base_uri;?>/plugin/ticaga_support/client_main/clientTicketChooseDept">Click Here</a> to go to your client portal for opening tickets.
 							</div>
                         </div>
                     </div>
