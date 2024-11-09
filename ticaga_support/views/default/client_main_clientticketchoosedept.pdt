@@ -22,7 +22,7 @@
                     ?>
                 <div class="col-md-6">
                     <div class="list-group mb-3">
-                        <a href="<?php echo $this->Html->safe($this->base_uri . 'plugin/ticaga_support/client_main/clientTicketOpen/' . (isset($department['id']) ? $department['id'] : null) . '/');?>" class="list-group-item p-3">
+                        <a href="<?php echo $this->Html->safe($this->base_uri . 'plugin/ticaga_support/client_main/submitTicket/' . (isset($department['id']) ? $department['id'] : null) . '/');?>" class="list-group-item p-3">
                             <h4 class="border-0 pb-0"><?php echo (isset($department['department_name']) ? $this->Html->safe($department['department_name']) : null);?></h4>
                             <?php
                             if (!empty($department['department_description'])) {
@@ -54,25 +54,7 @@
             if (!(isset($render_section) ? $render_section : null)) {
             ?>
         </div>
-            <?php
+        <?php
             }
-			} else {
-			?>
-			<tr>
-                <td colspan="7">
-                    <div class="empty_section">
-                        <div class="empty_box">
-                            <div class="alert alert-warning">
-							<strong>Attention!</strong>
-							<br/>
-							This is for Client Usage Only, please click the below to go to the Guests Departments page
-							<br/>
-							Please <a href="<?php echo $this->base_uri;?>/plugin/ticaga_support/client_main/guestTicketChooseDept">Click Here</a> to go to the guest portal for opening tickets.
-							</div>
-                        </div>
-                    </div>
-                </td>
-            </tr>
-			<?php
-			}
-			?>
+		}
+	    ?>
