@@ -38,3 +38,7 @@ $lang['TicagaSupportPlugin.index.tickets_overview'] = "Tickets Overview";
 $lang['TicagaSupportPlugin.index.department'] = "Department";
 $lang['TicagaSupportPlugin.index.status'] = "Status";
 $lang['TicagaSupportPlugin.index.create_ticket'] = "Create a ticket";
+
+// Viewing Ticket
+$lang['TicagaSupportPlugin.index.ticket'] = "Ticket";
+$lang['TicagaSupportPlugin.index.ticket_not_found'] = "Sorry this ticket has not been found. Please contact our support.";
