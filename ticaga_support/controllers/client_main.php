@@ -103,7 +103,6 @@ class ClientMain extends TicagaSupportController
 		$userExists = $this->TicagaTickets->doesUserExist();
 		$deptinfo = $this->TicagaTickets->getDepartmentsByIDNonArray($this->get[0]);
 		$prioritystatuses = $this->TicagaTickets->getPrioritiesHighAllowed($this->get[0]);
-		$assocationExists = $this->TicagaTickets->CheckClientAssociationToTicaga($client_id);
 		if ($deptinfo && $client_id == false)
 		{
 			$deptjsondec = $deptinfo;
