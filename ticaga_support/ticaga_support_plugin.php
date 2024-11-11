@@ -310,6 +310,11 @@ class TicagaSupportPlugin extends Plugin
         $this->uses(['Record']);
         return $this->Record->select()->from("ticaga_blesta_settings")->where("ticaga_blesta_settings.company_id", "=", Configure::get('Blesta.company_id'))->fetch();
     }
+
+	public function getAPIInfoByCompanyIdProvided(){
+        $this->uses(['Record']);
+        return $this->Record->select()->from("ticaga_blesta_settings")->where("ticaga_blesta_settings.company_id", "=", Configure::get('Blesta.company_id'))->fetch();
+	}
 	
 	/**
      * Retrieves a partially-constructed Record object for fetching client tickets by ID
