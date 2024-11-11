@@ -38,13 +38,13 @@ class ClientMain extends TicagaSupportController
     {
 		$client_id = $this->client_id;
 		$userExists = $this->TicagaTickets->doesUserExist();
+		$departments_all = $this->TicagaTickets->getDepartmentsAll();
 
 		if ($userExists == false && $client_id == false)
 		{
 			$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments/');
 		} else if($userExists == false && $client_id != false) {
 			$tickets = $this->TicagaTickets->getTicketsByUserEmail($client_id);
-			$departments_all = $this->TicagaTickets->getDepartmentsAll();
 			if ($tickets == false)
 			{
 				$this->set('tickets', []);
@@ -55,7 +55,6 @@ class ClientMain extends TicagaSupportController
 			}
 		} else {
 			$tickets = $this->TicagaTickets->getTicketsByUserID($client_id);
-
 			if ($tickets == false)
 			{
 				$this->set('tickets', []);
@@ -227,7 +226,7 @@ class ClientMain extends TicagaSupportController
     {
 		$ticket = $this->TicagaTickets->get($this->get[0]);
 		$ticketBelongToClient = $this->TicagaTickets->doesTicketBelongToClient($this->get[0]);
-	
+
 		if ($ticket == false || $ticketBelongToClient == false)
 		{
 			$this->flashMessage('error', "Sorry this ticket hasn't been found on our system. Please contact our support.", null, false);

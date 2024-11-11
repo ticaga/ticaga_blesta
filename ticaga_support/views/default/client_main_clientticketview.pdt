@@ -13,7 +13,6 @@
 		
         $this->WidgetClient->create($ticket_title);
         $this->WidgetClient->startBody();
-        $this->Form->create();
 
 ?>
 <div class="container-fkuid">
@@ -57,23 +56,40 @@
     ?>
 </div>
 <?php
-    $this->Form->end();
     $this->WidgetClient->endBody();
     $this->WidgetClient->end();
 ?>
-
+<?php
+    $this->Form->create();
+?>
+<div class="card card-blesta content_section">
+    <div class="card-header">
+    <?php echo $this->_('TicagaSupportPlugin.index.response_title', true);?>
+    </div>
+    <div class="card-body">
+        <div class="form-group">
+            <?php
+                $this->Form->fieldTextarea('response_content', null, ['id' => 'response_content', 'rows' => 5, 'class' => 'form-control']);
+				//$this->Form->fieldTextarea('response_content', null, ['id' => 'response_content', 'rows' => 5, 'class' => 'form-control', 'data-markdown-editor' => '']);
+            ?>
+        </div>
+		<button type="submit" class="btn btn-light float-right">
+            <?php echo $this->_('TicagaSupportPlugin.index.submit', true);?>
+        </button>
+    </div>
+</div>
 <?php
     // Don't show this container when only rendering the widget section
     if (!(isset($render_section) ? $render_section : null)) {
 ?>
 </div>
 <?php
-    }
+    $this->Form->end();
 ?>
 <div class="col-md-3">
     <div class="card card-blesta content_section">
         <div class="card-header">
-            Featured
+        <?php echo $this->_('TicagaSupportPlugin.index.ticket_information', true);?>
         </div>
         <ul class="list-group list-group-flush"">
             <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -97,3 +113,6 @@
         </ul>
     </div>
 </div>
+<?php
+    }
+?>
