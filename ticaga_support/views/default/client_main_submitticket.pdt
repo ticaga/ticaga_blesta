@@ -58,7 +58,7 @@
             ?>
         </div>
 		<button type="submit" class="btn btn-light float-right">
-            <?php echo $this->_('TicagaSupportPlugin.index.submit', true);?>
+            <?php echo $this->_('TicagaSupportPlugin.index.create', true);?>
         </button>
 
     <?php

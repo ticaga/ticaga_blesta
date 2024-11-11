@@ -41,7 +41,7 @@
 					{
 						if ($ticket->department_id == $dept['id'])
 						{
-							$department_name = $dept['department_name'];
+							$department_name = $dept["department_name"];
 						}
 					}
 				}

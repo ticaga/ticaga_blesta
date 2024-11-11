@@ -38,13 +38,13 @@ class ClientMain extends TicagaSupportController
     {
 		$client_id = $this->client_id;
 		$userExists = $this->TicagaTickets->doesUserExist();
+		$departments_all = $this->TicagaTickets->getDepartmentsAll();
 
 		if ($userExists == false && $client_id == false)
 		{
 			$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments/');
 		} else if($userExists == false && $client_id != false) {
 			$tickets = $this->TicagaTickets->getTicketsByUserEmail($client_id);
-			$departments_all = $this->TicagaTickets->getDepartmentsAll();
 			if ($tickets == false)
 			{
 				$this->set('tickets', []);
@@ -55,7 +55,6 @@ class ClientMain extends TicagaSupportController
 			}
 		} else {
 			$tickets = $this->TicagaTickets->getTicketsByUserID($client_id);
-
 			if ($tickets == false)
 			{
 				$this->set('tickets', []);
@@ -225,19 +224,16 @@ class ClientMain extends TicagaSupportController
      */
     public function clientViewTicket()
     {
-		$ticket_id = $this->get[0];
-		$ticket = $this->TicagaTickets->get($ticket_id);
-		$ticketBelongToClient = $this->TicagaTickets->doesTicketBelongToClient($ticket_id);
-	
+		$ticket = $this->TicagaTickets->get($this->get[0]);
+		$ticketBelongToClient = $this->TicagaTickets->doesTicketBelongToClient($this->get[0]);
+
 		if ($ticket == false || $ticketBelongToClient == false)
 		{
-			$this->flashMessage('error', "Sorry, No Ticket by that ID Exists or you have no rights to view it.", null, false);
+			$this->flashMessage('error', "Sorry this ticket hasn't been found on our system. Please contact our support.", null, false);
 			$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');	
-			$this->set('ticket', []);
-		} else {
-			$this->set('ticket', $ticket);
 		}
 		
+		$this->set('ticket', $ticket);
 		return $this->view->setView('client_main_clientticketview', 'default');
 		return $this->renderAjaxWidgetIfAsync(false);
     }

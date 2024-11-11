@@ -1,60 +1,118 @@
 <?php
-    if ($this->Html->ifSet($message)) {
-          echo $message;
+    // Don't show this container when only rendering the widget section
+    if (!(isset($render_section) ? $render_section : null)) {
+?>
+    <div class="col-md-9">
+    <?php
     }
-
-    // Create widget
-	$this->Widget->clear();
-	$this->Widget->setStyleSheet($this->view_dir . "css/styles.css");
-	$this->Widget->create("View Ticket Information");
-
-	$this->Form->create();
+    	echo (isset($message) ? $message : null);
+		// Create widget
+		$this->Widget->clear();
+		$this->Widget->setStyleSheet($this->view_dir . "css/styles.css");
+        $ticket_title = $this->_('TicagaSupportPlugin.index.ticket', true) . ' #' . $ticket['ticket'][0]->id . ' - ' . mb_strimwidth($this->Html->safe($ticket['ticket'][0]->subject), 0, 60, "...");
+		
+        $this->WidgetClient->create($ticket_title);
+        $this->WidgetClient->startBody();
 
 ?>
-<div class="inner">
-    <div class="common_box_content">
-        <table class="table">
-            <tr class="heading_row">
-                <td><span>Submitted by Client Name</span></td>
-                <td><span>Status</span></td>
-				<td class="last"><span>Ticket Subject</span></td>
-				<td class="last"><span>Replies/Original Ticket Title</span></td>
-				<td class="last"><span>Replies/Original Ticket Response</span></td>
-            </tr>
-            <?php
-                if (isset($ticket['replies']) && !empty($ticket['replies'])) {
-                    foreach ($ticket['replies'] as $reply) {
-					if (!isset($reply))
-					{
-					break;
-					} else {
-            ?>
-            <tr>
-				<td><?php echo $this->Html->safe($ticket['ticket'][0]->public_name); ?></td>
-				<td><?php echo $this->Html->safe($ticket['ticket'][0]->status); ?></td>
-				<td><?php echo $this->Html->safe($ticket['ticket'][0]->subject); ?></td>
-				<td><?php echo $this->Html->safe($reply['response_title']); ?></td>
-				<td><?php echo $this->Html->safe($reply['response_content']); ?></td>
-            </tr>
-            <?php
-                    }
-					}
-                } else {
-            ?>
-            <tr>
-				<td><?php echo $this->Html->safe($ticket['ticket'][0]->public_name); ?></td>
-				<td><?php echo $this->Html->safe($ticket['ticket'][0]->status); ?></td>
-				<td><?php echo $this->Html->safe($ticket['ticket'][0]->subject); ?></td>
-				<td><?php echo $this->Html->safe($ticket['ticket'][0]->subject); ?></td>
-				<td><?php echo $this->Html->safe($ticket['ticket'][0]->content); ?></td>
-            </tr>
-            <?php
+<div class="container-fkuid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="border rounded overflow-hidden flex-md-row h-md-250 position-relative">
+                <div class="col p-4 d-flex flex-column position-static">
+                    <strong class="d-inline-block mb-2 text-secondary">Ticket Response</strong>
+                    <p class="card-text mb-auto">
+                        <?php echo nl2br($this->Html->safe($ticket['ticket'][0]->content)); ?>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php
+        if (isset($ticket['replies']) && !empty($ticket['replies'])) {
+            foreach ($ticket['replies'] as $reply) {
+                if($reply['is_note'] != '1'){
+    ?>
+    <div class="row mt-2">
+        <div class="col-md-12">
+            <div class="border rounded overflow-hidden flex-md-row h-md-250 position-relative">
+                <div class="col p-4 d-flex flex-column position-static">
+                <?php if($reply['agent_response'] == '1'){ ?>
+                    <strong class="d-inline-block mb-2 text-primary">Agent Reply</strong>
+                <?php } else { ?>
+                    <strong class="d-inline-block mb-2 text-warning">You</strong>
+                <?php } ?>
+                    <p class="card-text mb-auto">
+                        <?php echo nl2br($this->Html->safe($reply['response_content'])); ?>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php
                 }
+            }
+        }
+    ?>
+</div>
+<?php
+    $this->WidgetClient->endBody();
+    $this->WidgetClient->end();
+?>
+<?php
+    $this->Form->create();
+?>
+<div class="card card-blesta content_section">
+    <div class="card-header">
+    <?php echo $this->_('TicagaSupportPlugin.index.response_title', true);?>
+    </div>
+    <div class="card-body">
+        <div class="form-group">
+            <?php
+                $this->Form->fieldTextarea('response_content', null, ['id' => 'response_content', 'rows' => 5, 'class' => 'form-control']);
+				//$this->Form->fieldTextarea('response_content', null, ['id' => 'response_content', 'rows' => 5, 'class' => 'form-control', 'data-markdown-editor' => '']);
             ?>
-        </table>
+        </div>
+		<button type="submit" class="btn btn-light float-right">
+            <?php echo $this->_('TicagaSupportPlugin.index.submit', true);?>
+        </button>
     </div>
 </div>
 <?php
-	$this->Form->end();
-	$this->Widget->end();
+    // Don't show this container when only rendering the widget section
+    if (!(isset($render_section) ? $render_section : null)) {
+?>
+</div>
+<?php
+    $this->Form->end();
+?>
+<div class="col-md-3">
+    <div class="card card-blesta content_section">
+        <div class="card-header">
+        <?php echo $this->_('TicagaSupportPlugin.index.ticket_information', true);?>
+        </div>
+        <ul class="list-group list-group-flush"">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <b>Department:</b>
+                <span class="badge badge-secondary badge-pill">
+                    <?php echo ucwords($this->Html->safe($ticket['dept_info'][0]["department_name"])); ?>
+                </span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <b>Status:</b>
+                <span class="badge badge-secondary badge-pill">
+                    <?php echo ucwords($this->Html->safe($ticket['ticket'][0]->status)); ?>
+                </span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <b>Priority:</b>
+                <span class="badge badge-secondary badge-pill">
+                    <?php echo ucwords($this->Html->safe($ticket['ticket'][0]->priority)); ?>
+                </span>
+            </li>
+        </ul>
+    </div>
+</div>
+<?php
+    }
 ?>

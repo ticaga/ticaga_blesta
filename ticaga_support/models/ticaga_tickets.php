@@ -393,6 +393,7 @@ class TicagaTickets extends TicagaSupportModel
 		  }	
 		}
 		$userinfo = $this->getUserInfo($ticket_info[0]->user_id);
+
 		$deptinfo = $this->getDepartmentsByID($ticket_info[0]->department_id);
 		return array("ticket" => $ticket_info, "replies" => $replies_array, "userinfo" => $userinfo, "dept_info" => $deptinfo);
 		} else {
