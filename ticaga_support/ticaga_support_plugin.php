@@ -58,6 +58,48 @@ class TicagaSupportPlugin extends Plugin
                 )
                 ->setKey(['api_url'], 'primary')
                 ->create('ticaga_blesta_settings', true);
+				
+				// Create database tables
+            // ticaga_blesta_user_association
+            $this->Record
+                ->setField(
+                    'user_ticaga',
+                    [
+                        'type' => 'VARCHAR',
+                        'size' => "255",
+                        'is_null' => false,
+                        'default' => '',
+                    ]
+                )
+				->setField(
+                    'user_blesta',
+                    [
+                        'type' => 'VARCHAR',
+                        'size' => "255",
+                        'is_null' => false,
+                        'default' => '',
+                    ]
+                )
+                ->setField(
+                    'email_ticaga',
+                    [
+                        'type' => 'VARCHAR',
+                        'size' => "255",
+                        'is_null' => false,
+                        'default' => '',
+                    ]
+                )
+				->setField(
+                    'company_id',
+                    [
+                        'type' => 'INT',
+                        'size' => "10",
+                        'is_null' => false,
+                        'default' => Configure::get('Blesta.company_id'),
+                    ]
+                )
+                ->setKey(['user_ticaga'], 'primary')
+                ->create('ticaga_blesta_users', true);
                 
         } catch (Exception $e) {
             // Error adding... no permission?
@@ -79,12 +121,36 @@ class TicagaSupportPlugin extends Plugin
             try {
                 // Remove database tables
                 $this->Record->drop('ticaga_blesta_settings');
+				$this->Record->drop('ticaga_blesta_users');
             } catch (Exception $e) {
                 // Error dropping... no permission?
                 $this->Input->setErrors(['db' => ['create' => $e->getMessage()]]);
                 return;
             }
         }
+    }
+	
+	/**
+     * Perform the upgrade logic of the plugin.
+     *
+     * @param string $current_version The installed version of the product
+     * @param int    $plugin_id       The plugin ID
+     */
+    public function upgrade($current_version, $plugin_id)
+    {
+        // Upgrade if possible
+        if (version_compare($this->version, $current_version, '>')) {
+          // Upgrade to 1.0.1 (Second Revision/Release)
+          if (version_compare($current_version, '1.0.1', '<')) {
+            //Create IP Address table
+            $this->Record->setField('user_ticaga', ['type' => 'varchar', 'size' => 255])
+                    ->setField('user_blesta', ['type' => 'varchar', 'size' => 255])
+                    ->setField('email_ticaga', ['type' => 'varchar', 'size' => 255])
+                    ->setField('company_id', ['type' => 'int', 'size' => 10])
+                    ->setKey(['user_ticaga'], 'primary')
+                    ->create('ticaga_blesta_users', true);
+          }
+		}
     }
 
     /**

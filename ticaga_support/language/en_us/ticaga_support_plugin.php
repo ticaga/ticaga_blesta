@@ -25,6 +25,7 @@ $lang['TicagaSupportPlugin.card_client.getClientTicketsTotal'] = 'Tickets';
 
 // Open a ticket
 $lang['TicagaSupportPlugin.index.create_ticket'] = 'Create a ticket';
+$lang['TicagaSupportPlugin.index.sync_account'] = 'Sync Account Between Support Platform and Blesta';
 $lang['TicagaSupportPlugin.index.subject'] = "Subject";
 $lang['TicagaSupportPlugin.index.email_address'] = "Email Address";
 $lang['TicagaSupportPlugin.index.carbon_copy'] = "CC";

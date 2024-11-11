@@ -279,9 +279,8 @@ class TicagaTickets extends TicagaSupportModel
 
         if (!$new_ticket
             && (
-                isset($vars['department_id']) || isset($vars['summary'])
+                isset($vars['department_id'])
                 || isset($vars['priority']) || isset($vars['status'])
-                || isset($vars['ticket_staff_id'])
             )
         ) {
             if (($ticket = $this->get($ticket_id, false))) {
@@ -450,16 +449,17 @@ class TicagaTickets extends TicagaSupportModel
 		if ($resp_test)
 		{
 		$ticket_info = json_decode($resp['response']);
-		$userinfo = $this->getUserInfo($ticket_info[0]->user_id);
+		$client_var = $this->Clients->get($client_id);
+		$client_email = $client_var->email ?? false;
 		if ($client_id == false)
 		{
 			return false;
 		} else {
-			$client_var = $this->Clients->get($client_id);
-			$client_email = $client_var->email ?? false;
 		  if ($client_email != false)
 		  {
-			if ($ticket_info[0]->public_email == $client_email)
+     	    $userinfo = $this->getUserInfoByEmail($client_email);
+			$userinfobyid = $this->getUserInfo($client_id);
+			if ($ticket_info[0]->public_email == $client_email || $ticket_info[0]->user_id == $userinfo[0]->id || $ticket_info[0]->user_id == $userinfobyid[0]->id)
 			{
 				return true;
 			} else {
@@ -470,6 +470,34 @@ class TicagaTickets extends TicagaSupportModel
 		} else {
 		return false;
 		}
+    }
+	
+	/**
+     * Associates/Syncs Blesta Account with Ticaga Account
+     *
+     * @param int $id The id of the client to fetch
+     * @return mixed An stdClass object representing the ticket, or false if none exist
+     */
+    public function associateClientToTicaga($id)
+    {
+        $apiKey = $this->getAPIInfoByCompanyId()->api_key;
+		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
+		$ipaddress = $this->get_client_ip_server();
+		$client_id = $this->Session->read("blesta_client_id") ?? false;
+		$client_var = $this->Clients->get($client_id);
+		$client_email = $client_var->email ?? false;
+		if ($client_email != false)
+		  {
+			  $userinfo = $this->getUserInfoByEmail($client_email);
+			  $this->Record->duplicate("user_ticaga", "=", $userinfo[0]->id)->insert("ticaga_blesta_users", array('user_ticaga' => $userinfo[0]->id,'user_blesta' => $client_id, 'email_ticaga' => $userinfo[0]->email));
+			  $lastinsertid = $this->Record->lastInsertId();
+			  if ($lastinsertid != null)
+			  {
+				  return true;
+			  } else {
+				  return false;
+			  }
+		  }
     }
 
     /**
@@ -586,6 +614,39 @@ class TicagaTickets extends TicagaSupportModel
 		} else {
 		return false;
 		}
+    }
+	
+	/**
+     * Gets all User Info to a specific ticket
+     *
+     * @param $user_id The ID of the user whose information to fetch
+     * @return array A list of replies to the given ticket
+     */
+    private function getUserInfoByEmail($email_id)
+    {
+        $apiKey = $this->getAPIInfoByCompanyId()->api_key;
+		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
+		$ipaddress = $this->get_client_ip_server();
+		$staff_id = $this->Session->read("blesta_staff_id") ?? $this->Session->read("blesta_client_id");
+		$resp = $this->TicagaSettings->callAPI("tickets/userinfobyemail/" . $email_id, $apiURL,$apiKey);
+		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
+		if ($resp_test)
+		{
+		return json_decode($resp['response']);
+		} else {
+		return false;
+		}
+    }
+	
+	/**
+     * return Ticaga Specific User ID
+     *
+     * @param $user_id The ID of the user whose information to fetch
+     * @return array A list of replies to the given ticket
+     */
+    public function retrieveTicagaID($id)
+    {
+        return $this->Record->select()->from("ticaga_blesta_users")->where("ticaga_blesta_users.user_blesta", "=", $id)->fetch();
     }
 
     /**
@@ -720,7 +781,7 @@ class TicagaTickets extends TicagaSupportModel
 		{
 			return false;
 		} else {
-		$resp = $this->TicagaSettings->callAPI("tickets/userbyemail/" . $client_email, $apiURL,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("tickets/userticketsbyemail/" . $client_email, $apiURL,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		if ($resp_test)
 		{

@@ -24,6 +24,8 @@ class ClientMain extends TicagaSupportController
 		
 		$this->client_id = $this->Session->read('blesta_client_id');
 		
+		$this->staff_id = $this->Session->read('blesta_staff_id');
+		
 		 // Fetch contact that is logged in, if any
         if (!isset($this->Contacts)) {
             $this->uses(['Contacts']);
@@ -39,12 +41,14 @@ class ClientMain extends TicagaSupportController
 		$client_id = $this->client_id;
 		$userExists = $this->TicagaTickets->doesUserExist();
 		$departments_all = $this->TicagaTickets->getDepartmentsAll();
-
 		if ($userExists == false && $client_id == false)
 		{
 			$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments/');
 		} else if($userExists == false && $client_id != false) {
-			$tickets = $this->TicagaTickets->getTicketsByUserEmail($client_id);
+			$client_var = $this->Clients->get($client_id);
+			$client_email = $client_var->email;
+			$client_ticaga_id = $this->TicagaTickets->retrieveTicagaID($client_id);
+			$tickets = $this->TicagaTickets->getTicketsByUserID($client_ticaga_id->user_ticaga);
 			if ($tickets == false)
 			{
 				$this->set('tickets', []);
@@ -54,7 +58,7 @@ class ClientMain extends TicagaSupportController
 				$this->set('depts', $departments_all);
 			}
 		} else {
-			$tickets = $this->TicagaTickets->getTicketsByUserID($client_id);
+			$tickets = $this->TicagaTickets->getTicketsByUserEmail($client_id);
 			if ($tickets == false)
 			{
 				$this->set('tickets', []);
@@ -82,8 +86,6 @@ class ClientMain extends TicagaSupportController
 			$deptmerged = array_merge($depts_public, $depts_clients);
 			$this->set('depts', $deptmerged);
 			$this->set('client_id', $client_id);
-			return $this->view->setView('client_main_clientticketchoosedept', 'default');
-		    return $this->renderAjaxWidgetIfAsync(false);
 		} else {
 			$this->set('depts', $depts_public);
 			$this->set('client_id', false);
@@ -101,7 +103,7 @@ class ClientMain extends TicagaSupportController
 		$userExists = $this->TicagaTickets->doesUserExist();
 		$deptinfo = $this->TicagaTickets->getDepartmentsByIDNonArray($this->get[0]);
 		$prioritystatuses = $this->TicagaTickets->getPrioritiesHighAllowed($this->get[0]);
-		
+		$assocationExists = $this->TicagaTickets->CheckClientAssociationToTicaga($client_id);
 		if ($deptinfo && $client_id == false)
 		{
 			$deptjsondec = $deptinfo;
@@ -178,11 +180,24 @@ class ClientMain extends TicagaSupportController
 					$cc = $this->post['cc'];
 					$ccid = [];
 
-					if ($cc != "" || !empty($cc))
+					if (gettype($cc) == "array")
+					{
+					if (count($cc) > 1)
 					{
 						$ccid = explode(",",$cc);
 					} else {
 						$ccid = [0 => $cc];
+					}
+					} elseif (gettype($cc) == "string") {
+					$cctest = explode(",",$cc);
+					if (count($cctest) > 1)
+					{
+						$ccid = explode(",",$cc);
+					} else {
+						$ccid = [0 => $cc];
+					}
+					} else {
+					$ccid = [];
 					}
 
 					$submitarray = ["department_id" => $dept_id, "client_id" => $cid, "priority" => $priority, "summary" => $subject, "details" => $content, "cc" => $ccid, 'client_email' => $email, 'public_name' => $client_name];
@@ -211,8 +226,23 @@ class ClientMain extends TicagaSupportController
      */
     public function syncClientAccount()
   	{
-		$client_id = $this->client_id;
+		$client_id = $this->client_id ?? false;
 		$userExists = $this->TicagaTickets->doesUserExist();
+		if ($client_id != false)
+		{
+			$res = $this->TicagaTickets->associateClientToTicaga($client_id);
+			if ($res)
+			{
+				$this->flashMessage('message', "User Information Synced Between Ticaga and Blesta", null, false);
+				$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');
+			} else {
+				$this->flashMessage('error', "Sorry a Error occurred syncing your profile from Ticaga. Please contact our support.", null, false);
+				$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');	
+			}	
+		 } else {
+			$this->flashMessage('error', "This requires a signed in user.", null, false);
+			$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');
+		 }
 		return $this->view->setView('client_main_syncclientaccount', 'default');
 		return $this->renderAjaxWidgetIfAsync(false);
   	}
@@ -231,6 +261,66 @@ class ClientMain extends TicagaSupportController
 		{
 			$this->flashMessage('error', "Sorry this ticket hasn't been found on our system. Please contact our support.", null, false);
 			$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');	
+		}
+		
+		if (!empty($this->post)) {
+					$ticket_id = $this->get[0];
+					$priority = $this->post['priority'];
+					$subject = $this->post['summary'];
+					$content = $this->post['details'];
+					$client_var = $this->Clients->get($client_id);
+					$cc = $this->post['cc'];
+					$ccid = [];
+					
+					if ($client_var != null)
+					{
+					$client_name = $client_var->first_name . " " . $client_var->last_name;
+					$client_email = $client_var->email;
+					$email = $this->post['email'] ?? $client_var->email;
+					$cid = $this->client_id ?? $this->staff_id;
+					} else {
+					$email = $this->post['email'] ?? "";
+					$cid = $this->client_id ?? $this->staff_id;
+					$client_name = $cid;
+						//email check
+						if ($email == "")
+					    {
+						$this->flashMessage('error', "Email is Required!", null, false);
+						$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/clientViewTicket/' . $this->get[0]);
+						return;
+					    }
+					}
+
+					if (gettype($cc) == "array")
+					{
+					if (count($cc) > 1)
+					{
+						$ccid = explode(",",$cc);
+					} else {
+						$ccid = [0 => $cc];
+					}
+					} elseif (gettype($cc) == "string") {
+					$cctest = explode(",",$cc);
+					if (count($cctest) > 1)
+					{
+						$ccid = explode(",",$cc);
+					} else {
+						$ccid = [0 => $cc];
+					}
+					} else {
+					$ccid = [];
+					}
+
+					$submitarray = ["department_id" => $ticket['ticket'][0]->department_id, "client_id" => $cid, "priority" => $priority, "summary" => $subject, "details" => $content, "cc" => $ccid, 'client_email' => $email, 'public_name' => $client_name, 'staff_id' => $this->staff_id];
+					$ticketsubmit = $this->TicagaTickets->addReply($submitarray);
+					if ($ticketsubmit != false)
+					{
+					$this->flashMessage('message', "Ticket Submitted", null, false);
+					$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/clientViewTicket' .  $this->get[0]);	
+					} else {
+					$this->flashMessage('error', "Failure Submitting Ticket", null, false);
+					$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/clientViewTicket' . $this->get[0]);
+					}
 		}
 		
 		$this->set('ticket', $ticket);
