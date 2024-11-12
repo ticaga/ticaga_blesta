@@ -271,7 +271,7 @@ class ClientMain extends TicagaSupportController
 		}
 		
 		if (!empty($this->post)) {
-			$client_var = $this->Clients->get($client_id);
+			$client_var = $this->Clients->get($this->client_id);
 			
 			if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
 				$ip_address = $_SERVER['HTTP_CLIENT_IP'];

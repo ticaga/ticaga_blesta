@@ -276,6 +276,8 @@ class TicagaTickets extends TicagaSupportModel
         // "status" should be the last element in case it is set to closed, so it will be the last log entry added
         $loggable_fields = ['department_id' => 'department_id', 'ticket_staff_id' => 'staff_id', 'summary' => 'summary',
             'priority' => 'priority', 'status' => 'status'];
+			
+		$ticketinfo = $this->get($ticket_id);
 
         if (!$new_ticket
             && (
@@ -296,20 +298,20 @@ class TicagaTickets extends TicagaSupportModel
 
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
-		$department_id = $vars['department_id'];
+		$department_id = $vars['department_id'] ?? $ticketinfo["ticket"][0]->department_id;
 		$response_user_id = $vars['response_user_id'] ?? $vars['staff_id'];
 		$details = $vars["response_content"] ?? "";
-		$isnote = $vars["is_note"] ?? "false";
+		$isnote = $vars["is_note"] ?? 0;
 		$ipaddress = $this->get_client_ip_server();
 		if ($vars['staff_id'] != null)
 		{
-		$callvars = array('response_user_id' => $response_user_id, "ticket_number" => $ticket_id, "response_content" => $details, "is_note" => $isnote, "agent_response" => "1", "created_at" => $vars['date_added'], "updated_at" => $vars['date_added']);
+		$callvars = array('response_user_id' => $response_user_id, "ticket_number" => $ticket_id, "response_content" => $details, "is_note" => $isnote, "agent_response" => "1");
 		
 		$resp = $this->TicagaSettings->callAPIPost("responses/reply",$callvars, $apiURL,$apiKey);
 		
         return $resp;	
 		} else {
-		$callvars = array('response_user_id' => $response_user_id, "ticket_number" => $ticket_id, "response_content" => $details, "is_note" => $isnote, "agent_response" => "0", "created_at" => $vars['date_added'], "updated_at" => $vars['date_added']);
+		$callvars = array('response_user_id' => $response_user_id, "ticket_number" => $ticket_id, "response_content" => $details, "is_note" => $isnote, "agent_response" => "0");
 		
 		$resp = $this->TicagaSettings->callAPIPost("responses/reply",$callvars, $apiURL,$apiKey);
 		
