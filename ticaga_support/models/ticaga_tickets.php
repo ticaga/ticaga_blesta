@@ -297,19 +297,19 @@ class TicagaTickets extends TicagaSupportModel
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
 		$department_id = $vars['department_id'];
-		$client_id = $vars['client_id'] ?? $vars['staff_id'];
-		$details = $vars["details"] ?? "";
-		$isnote = $vars["isnote"] ?? "false";
+		$response_user_id = $vars['response_user_id'] ?? $vars['staff_id'];
+		$details = $vars["response_content"] ?? "";
+		$isnote = $vars["is_note"] ?? "false";
 		$ipaddress = $this->get_client_ip_server();
 		if ($vars['staff_id'] != null)
 		{
-		$callvars = array('response_user_id' => $client_id, "ticket_number" => $ticket_id, "response_content" => $details, "is_note" => $isnote, "agent_response" => "1");
+		$callvars = array('response_user_id' => $response_user_id, "ticket_number" => $ticket_id, "response_content" => $details, "is_note" => $isnote, "agent_response" => "1", "created_at" => $vars['date_added'], "updated_at" => $vars['date_added']);
 		
 		$resp = $this->TicagaSettings->callAPIPost("responses/reply",$callvars, $apiURL,$apiKey);
 		
         return $resp;	
 		} else {
-		$callvars = array('response_user_id' => $client_id, "ticket_number" => $ticket_id, "response_content" => $details, "is_note" => $isnote, "agent_response" => "0");
+		$callvars = array('response_user_id' => $response_user_id, "ticket_number" => $ticket_id, "response_content" => $details, "is_note" => $isnote, "agent_response" => "0", "created_at" => $vars['date_added'], "updated_at" => $vars['date_added']);
 		
 		$resp = $this->TicagaSettings->callAPIPost("responses/reply",$callvars, $apiURL,$apiKey);
 		
