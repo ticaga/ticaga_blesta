@@ -9,8 +9,8 @@
 
         $this->Widget->clear();
         $link_buttons = [
-            ['name'=>$this->_('TicagaSupportPlugin.index.create_ticket', true), 'attributes'=>['href'=>$this->Html->safe($this->base_uri . 'plugin/ticaga_support/client_main/departments/')]],
-			['name'=>$this->_('TicagaSupportPlugin.index.sync_account', true), 'attributes'=>['href'=>$this->Html->safe($this->base_uri . 'plugin/ticaga_support/client_main/syncClientAccount/')]]
+            ['name'=>$this->_('TicagaSupportPlugin.index.create_ticket', true), 'attributes'=>['href'=>$this->Html->safe($this->base_uri . 'plugin/ticaga_support/client_main/departments/')]]
+			//['name'=>$this->_('TicagaSupportPlugin.index.sync_account', true), 'attributes'=>['href'=>$this->Html->safe($this->base_uri . 'plugin/ticaga_support/client_main/syncClientAccount/')]]
         ];
         $this->WidgetClient->setLinkButtons($link_buttons);
         $this->WidgetClient->create($this->_('TicagaSupportPlugin.index.tickets_overview', true));
