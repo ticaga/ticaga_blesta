@@ -36,10 +36,8 @@ class AdminMain extends TicagaSupportController
 			$this->redirect($this->base_uri . 'plugin/ticaga_support/admin_main/addAPIInfo/');	
 		} else {
 			$tickets = $this->TicagaTickets->getTickets();
-			if ($tickets == false)
+			if ($tickets)
 			{
-				$this->set('tickets', []);
-			} else {
 				$this->set('tickets', $tickets);
 			}
 		}

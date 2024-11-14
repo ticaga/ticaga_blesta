@@ -3,7 +3,7 @@
           echo $message;
       }
       $this->Widget->clear();
-      $this->Widget->create("Ticaga Tickets Overview");
+      $this->Widget->create($this->_('TicagaSupportPlugin.admin.title', true));
       $this->Form->create();
 ?>
 <div class="inner">
@@ -13,54 +13,38 @@
     <div class="common_box_content">
         <table class="table">
             <tr class="heading_row">
-                <td><span>Ticket Client Name</span></td>
-                <td><span>Status</span></td>
-				<td><span>Ticket Subject</span></td>
                 <td><span>Ticket ID</span></td>
-				<td class="last"><span>Department Name</span></td>
-				<td class="last"><span>Staff Assigned to</span></td>
-				<td class="last"><span>Priority</span></td>
+                <td><span>Client Name</span></td>
+				<td><span>Subject</span></td>
+				<td><span>Department</span></td>
+				<td><span>Priority</span></td>
+                <td><span>Status</span></td>
+				<td><span>Assigned</span></td>
                 <td class="last"><span>Options</span></td>
             </tr>
             <?php
-				$department_name = "";
                 if ($this->Html->ifSet($tickets)) {
                     foreach ($tickets['response'] as $ticket) {
-					if (!isset($ticket))
-					{
-					break;
-					} else {
-				if ($ticket->assigned == "0")
-				{
-					$ticketassigned = $this->Html->safe("Not Assigned");
-				} else if ($ticket->status >= "1") {
-					$ticketassigned = $this->Html->safe("Assigned");
-				}
-				if ($ticket->status == "open")
-				{
-					$ticketstatus = $this->Html->safe("Open");
-				} else if ($ticket->status == "closed") {
-					$ticketstatus = $this->Html->safe("Closed");
-				} else if ($ticket->status == "Awaiting Reply") {
-					$ticketstatus = $this->Html->safe("Awaiting Reply");
-				} else if ($ticket->status == "In Progress") {
-					$ticketstatus = $this->Html->safe("In Progress");
-				}
+                        if ($ticket->assigned == "0")
+                        {
+                            $ticket_assigned = $this->Html->safe("Not Assigned");
+                        } else {
+                            $ticket_assigned = $this->Html->safe("Assigned");
+                        }
             ?>
             <tr>
-                <td><?php echo $this->Html->safe($ticket->public_email); ?></td>
-                <td><?php echo $this->Html->safe($ticketstatus); ?></td>
+                <td><a href="<?php echo $this->base_uri; ?>plugin/ticaga_support/admin_main/viewTicket/<?php echo $this->Html->safe($ticket->id); ?>/">#<?php echo $this->Html->safe($ticket->id); ?></a></td>
+                <td><?php echo $this->Html->safe($ticket->client_name); ?></td>
 				<td><?php echo $this->Html->safe($ticket->subject); ?></td>
-				<td><?php echo $this->Html->safe($ticket->id); ?></td>
-				<td><?php echo $this->Html->safe($tickets['dept_name']); ?></td>
-				<td><?php echo $this->Html->safe($ticketassigned); ?></td>
-				<td><?php echo $this->Html->safe($ticket->priority); ?></td>
+				<td><?php echo $this->Html->safe($ticket->department_name); ?></td>
+				<td><?php echo ucwords($this->Html->safe($ticket->priority)); ?></td>
+                <td><?php echo ucwords($this->Html->safe($ticket->status)); ?></td>
+				<td><?php echo $this->Html->safe($ticket_assigned); ?></td>
                 <td>
                     <a href="<?php echo $this->base_uri; ?>plugin/ticaga_support/admin_main/viewTicket/<?php echo $this->Html->safe($ticket->id); ?>/">View Ticket</a>
                 </td>
             </tr>
             <?php
-                    }
 					}
                 } else {
             ?>

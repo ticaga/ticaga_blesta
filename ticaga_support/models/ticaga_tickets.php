@@ -450,28 +450,26 @@ class TicagaTickets extends TicagaSupportModel
 		$replies = $this->getReplies($code);
 		if ($resp_test)
 		{
-		$ticket_info = json_decode($resp['response']);
-		$client_var = $this->Clients->get($client_id);
-		$client_email = $client_var->email ?? false;
-		if ($client_id == false)
-		{
-			return false;
-		} else {
-		  if ($client_email != false)
-		  {
-     	    $userinfo = $this->getUserInfoByEmail($client_email);
-			$userinfobyid = $this->getUserInfo($client_id);
-			if ($ticket_info[0]->public_email == $client_email || $ticket_info[0]->user_id == $userinfo[0]->id || $ticket_info[0]->user_id == $userinfobyid[0]->id)
-			{
-				return true;
-			} else {
-				return false;
-			}
-		  }
-		}
-		} else {
-		return false;
-		}
+            $ticket_info = json_decode($resp['response']);
+            $client_var = $this->Clients->get($client_id);
+            $client_email = $client_var->email ? $client_var->email : $ticket_info[0]->public_email;
+
+            if ($client_id == $ticket_info[0]->user_id)
+            {
+                return true;
+            } else {
+                if ($client_email != false){
+                    $userinfo = $this->getUserInfoByEmail($client_email);
+                    $userinfobyid = $this->getUserInfo($client_id);
+                    if ($ticket_info[0]->public_email == $client_email || $ticket_info[0]->user_id == $userinfo[0]->id || $ticket_info[0]->user_id == $userinfobyid[0]->id)
+                    {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }  
+            }
+        }
     }
 	
 	/**
@@ -677,46 +675,31 @@ class TicagaTickets extends TicagaSupportModel
 		$staff_id = $this->Session->read("blesta_staff_id") ?? $this->Session->read("blesta_client_id");
 		if ($staff_id != null)
 		{
-		$dept_resp = $this->TicagaSettings->callAPI("departments", $apiURL,$apiKey);
-		$dept_resp_count = $this->TicagaSettings->callAPI("department/count", $apiURL,$apiKey);
-		$jsondec_dept_resp = json_decode($dept_resp['response']);
-		if ($dept_resp_count > 0)
-		{
-		foreach ($jsondec_dept_resp as $dept)
-		{
-		$resp = $this->TicagaSettings->callAPI("tickets/all/" . $dept->slug, $apiURL,$apiKey);
-		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
-		if ($resp_test)
-		{
-		return array("response" => json_decode($resp['response']), "dept_name" => $dept->department_name);
-		} else {
-		return false;
-		}	
-		}	
-		} else {
-		return false;
-		}
-	  } else {
-		$dept_resp = $this->TicagaSettings->callAPI("departments", $apiURL,$apiKey);
-		$dept_resp_count = $this->TicagaSettings->callAPI("department/count", $apiURL,$apiKey);
-		$jsondec_dept_resp = json_decode($dept_resp['response']);
-		if ($dept_resp_count > 0)
-		{
-		foreach ($jsondec_dept_resp as $dept)
-		{
-		$resp = $this->TicagaSettings->callAPI("tickets/all/" . $dept->slug, $apiURL,$apiKey);
-		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
-		if ($resp_test)
-		{
-		return array("response" => json_decode($resp['response']), "dept_name" => $dept->department_name);
-		} else {
-		return false;
-		}	
-		}
-		} else {
-		return false;
-		}
-	  }
+            $dept_resp = $this->TicagaSettings->callAPI("departments", $apiURL,$apiKey);
+            $dept_resp_count = $this->TicagaSettings->callAPI("department/count", $apiURL,$apiKey);
+            $jsondec_dept_resp = json_decode($dept_resp['response']);
+            
+            if ($dept_resp_count['response'] > 0)
+            {
+                foreach ($jsondec_dept_resp as $dept)
+                {
+                    
+                    $resp = $this->TicagaSettings->callAPI("tickets/all/" . $dept->id, $apiURL,$apiKey);
+                    $resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
+                    
+                    if ($resp_test)
+                    {
+                        return array("response" => json_decode($resp['response']));
+                    } else {
+                        return false;
+                    }	
+		        }	
+		    } else {
+		        return false;
+		    }
+	    } else {
+		    return false;
+	    }
     }
 	
 	/**

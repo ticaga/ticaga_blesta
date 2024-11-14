@@ -46,3 +46,6 @@ $lang['TicagaSupportPlugin.index.ticket_not_found'] = "Sorry this ticket has not
 $lang['TicagaSupportPlugin.index.response_title'] = "Reply";
 $lang['TicagaSupportPlugin.index.ticket_information'] = "Ticket Information";
 $lang['TicagaSupportPlugin.index.submit'] = "Submit";
+
+// Admin Area
+$lang['TicagaSupportPlugin.admin.title'] = "Support";
