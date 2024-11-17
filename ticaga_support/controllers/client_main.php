@@ -56,7 +56,7 @@ class ClientMain extends TicagaSupportController
 			$tickets = $this->TicagaTickets->getTicketsByUserID($client_ticaga_id->user_ticaga);
 			***/
 			$tickets = $this->TicagaTickets->getTicketsByUserID($client_var->id);
-			//echo '<pre>';echo var_dump($tickets);echo '</pre>';
+			
 			if ($tickets == false)
 			{
 				$this->set('tickets', []);

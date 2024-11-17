@@ -39,6 +39,7 @@ $lang['TicagaSupportPlugin.index.tickets_overview'] = "Tickets Overview";
 $lang['TicagaSupportPlugin.index.department'] = "Department";
 $lang['TicagaSupportPlugin.index.status'] = "Status";
 $lang['TicagaSupportPlugin.index.create_ticket'] = "Create a ticket";
+$lang['TicagaSupportPlugin.index.no_tickets'] = 'Currently no tickets.';
 
 // Viewing Ticket
 $lang['TicagaSupportPlugin.index.ticket'] = "Ticket";
@@ -49,3 +50,4 @@ $lang['TicagaSupportPlugin.index.submit'] = "Submit";
 
 // Admin Area
 $lang['TicagaSupportPlugin.admin.title'] = "Support";
+$lang['TicagaSupportPlugin.admin.ticket_title'] = "Viewing Ticket";

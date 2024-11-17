@@ -101,7 +101,7 @@ class AdminMain extends TicagaSupportController
     {
 		$ticket_id = $this->get[0];
 		$ticket = $this->TicagaTickets->get($ticket_id);
-
+		echo '<pre>';echo var_dump($ticket);echo '</pre>';
 		if ($ticket == false)
 		{
 			$this->flashMessage('message', "Sorry, No Ticket by that ID Exists", null, false);

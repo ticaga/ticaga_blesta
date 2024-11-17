@@ -385,18 +385,14 @@ class TicagaTickets extends TicagaSupportModel
 		  foreach ($replies as $reply)
 		  {
 			$userinfo_reply = $this->getUserInfo($reply->response_user_id)[0];
-			$splice_id = explode(" ",$userinfo_reply->name);
-			$first_name = $splice_id[0];
-			$last_name = $splice_id[1];
-			$a_array = array("first_name" => $first_name, "last_name" => $last_name, "id" => $userinfo_reply->id);
+			$a_array = array("name" => $userinfo_reply->name);
 			$replies_info_array[$reply->id] = $a_array;
 			array_merge($replies_info_array[$reply->id],$replies_array);
 		  }	
 		}
-		$userinfo = $this->getUserInfo($ticket_info[0]->user_id);
 
 		$deptinfo = $this->getDepartmentsByID($ticket_info[0]->department_id);
-		return array("ticket" => $ticket_info, "replies" => $replies_array, "userinfo" => $userinfo, "dept_info" => $deptinfo);
+		return array("ticket" => $ticket_info, "replies" => $replies_array, "dept_info" => $deptinfo);
 		} else {
 		return false;
 		}
@@ -454,6 +450,7 @@ class TicagaTickets extends TicagaSupportModel
             $client_var = $this->Clients->get($client_id);
             $client_email = $client_var->email ? $client_var->email : $ticket_info[0]->public_email;
 
+            echo var_dump($client_email);die;
             if ($client_id == $ticket_info[0]->user_id)
             {
                 return true;
@@ -606,13 +603,13 @@ class TicagaTickets extends TicagaSupportModel
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
 		$ipaddress = $this->get_client_ip_server();
 		$staff_id = $this->Session->read("blesta_staff_id") ?? $this->Session->read("blesta_client_id");
-		$resp = $this->TicagaSettings->callAPI("tickets/userinfo/" . $user_id, $apiURL,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("tickets/user/" . $user_id, $apiURL,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		if ($resp_test)
 		{
-		return json_decode($resp['response']);
+		    return json_decode($resp['response']);
 		} else {
-		return false;
+		    return false;
 		}
     }
 	
@@ -667,7 +664,7 @@ class TicagaTickets extends TicagaSupportModel
      *  - type The reply type to fetch ('reply', 'note', 'all')
      * @return Array A partially-constructed Array object for fetching tickets
      */
-    public function getTickets(array $vars = [])
+    public function getTickets()
     {
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
@@ -681,19 +678,17 @@ class TicagaTickets extends TicagaSupportModel
             
             if ($dept_resp_count['response'] > 0)
             {
-                foreach ($jsondec_dept_resp as $dept)
-                {
                     
-                    $resp = $this->TicagaSettings->callAPI("tickets/all/" . $dept->id, $apiURL,$apiKey);
+                    $resp = $this->TicagaSettings->callAPI("tickets/grab_all/", $apiURL,$apiKey);
                     $resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
+                    echo var_dump($resp);
                     
                     if ($resp_test)
                     {
                         return array("response" => json_decode($resp['response']));
                     } else {
                         return false;
-                    }	
-		        }	
+                    }
 		    } else {
 		        return false;
 		    }

@@ -6,9 +6,9 @@
     // Create widget
 	$this->Widget->clear();
 	$this->Widget->setStyleSheet($this->view_dir . "css/styles.css");
-	$this->Widget->create("View Ticket Information");
-
-	$this->Form->create();
+    $title = $this->_('TicagaSupportPlugin.admin.ticket_title', true) . ' #' . $ticket['ticket'][0]->id;
+	$this->Widget->create($title);
+    $this->Form->create();
 
 ?>
 <div class="inner">
@@ -21,48 +21,13 @@
 				<td class="last"><span>Replies/Original Ticket Title</span></td>
 				<td class="last"><span>Replies/Original Ticket Response</span></td>
             </tr>
-            <?php
-                if (isset($ticket['replies']) && count($ticket['replies']) > 0) {
-                    foreach ($ticket['replies'] as $reply) {
-					if (!isset($reply))
-					{
-					break;
-					} else {
-            ?>
             <tr>
-				<td><?php echo $this->Html->safe($ticket['ticket'][0]->public_name); ?></td>
-				<td><?php echo $this->Html->safe($ticket['ticket'][0]->status); ?></td>
-				<td><?php echo $this->Html->safe($ticket['ticket'][0]->subject); ?></td>
-				<td><?php echo $this->Html->safe($reply['response_title']); ?></td>
-				<td><?php echo $this->Html->safe($reply['response_content']); ?></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>    
             </tr>
-            <?php
-                    }
-					}
-                } elseif (isset($ticket['ticket'])) {
-            ?>
-            <tr>
-				<td><?php echo $this->Html->safe($ticket['ticket'][0]->public_name); ?></td>
-				<td><?php echo $this->Html->safe($ticket['ticket'][0]->status); ?></td>
-				<td><?php echo $this->Html->safe($ticket['ticket'][0]->subject); ?></td>
-				<td>No Response Title So Far</td>
-				<td><?php echo $this->Html->safe($ticket['ticket'][0]->content); ?></td>
-            </tr>
-            <?php
-                } else {
-            ?>
-			<tr>
-                <td colspan="7">
-                    <div class="empty_section">
-                        <div class="empty_box">
-                            <p>No Tickets by that ID</p>
-                        </div>
-                    </div>
-                </td>
-            </tr>
-			<?php 
-				}
-			?>
         </table>
     </div>
 </div>
