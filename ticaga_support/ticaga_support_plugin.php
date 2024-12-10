@@ -100,7 +100,7 @@ class TicagaSupportPlugin extends Plugin
                 )
                 ->setKey(['user_ticaga'], 'primary')
                 ->create('ticaga_blesta_users', true);
-                
+				
         } catch (Exception $e) {
             // Error adding... no permission?
             $this->Input->setErrors(['db' => ['create' => $e->getMessage()]]);
@@ -165,20 +165,6 @@ class TicagaSupportPlugin extends Plugin
      */
     public function getActions()
     {
-        // return [
-            // // Ticaga Staff Support System
-            // [
-                // 'action' => 'nav_primary_staff',
-                // 'uri' => 'plugin/ticaga_support/admin_main/index/',
-                // 'name' => 'TicagaSupportPlugin.nav_primary_staff.index',
-            // ],
-            // // Ticaga Client Support System
-            // [
-                // 'action' => 'nav_primary_client',
-                // 'uri' => 'plugin/ticaga_support/client_main/index/',
-                // 'name' => 'TicagaSupportPlugin.nav_primary_client.index',
-            // ]
-        // ];
 		return [
 		 // Client Nav
             [
@@ -199,36 +185,6 @@ class TicagaSupportPlugin extends Plugin
                 'action' => 'widget_client_home',
                 'uri' => 'plugin/ticaga_support/client_main/index/',
                 'name' => 'TicagaSupportPlugin.widget_client_home.main'
-            ],
-            // Staff Nav
-            [
-                'action' => 'nav_primary_staff',
-                'uri' => 'plugin/ticaga_support/admin_main/index',
-                'name' => 'TicagaSupportPlugin.nav_primary_staff.main',
-                'options' => [
-                    'sub' => [
-                        [
-                            'uri' => 'plugin/ticaga_support/admin_main/index/',
-                            'name' => 'TicagaSupportPlugin.nav_primary_staff.index'
-                        ]
-                    ]
-                ]
-            ],
-            // Widget
-            [
-                'action' => 'widget_staff_client',
-                'uri' => 'plugin/ticaga_support/admin_main/index/',
-                'name' => 'TicagaSupportPlugin.widget_staff_client.tickets'
-            ],
-            // Client Profile Action Link
-            [
-                'action' => 'action_staff_client',
-                'uri' => 'plugin/ticaga_support/admin_main/adminClientTicketChooseDept/',
-                'name' => 'TicagaSupportPlugin.action_staff_client.add',
-                'options' => [
-                    'class' => 'ticket',
-                    'icon' => 'fa-ticket-alt'
-                ]
             ]
         ];
     }
@@ -254,16 +210,6 @@ class TicagaSupportPlugin extends Plugin
     public function getCards()
     {
         return [
-            [
-                'level' => 'staff',
-                'callback' => ['this', 'getStaffTicketsForClients'],
-                'callback_type' => 'value',
-                'background' => '#fff',
-                'background_type' => 'color',
-                'label' => 'TicagaSupportPlugin.card_staff.getStaffTicketsForClients',
-                'link' => 'plugin/ticaga_support/admin_main',
-                'enabled' => 1
-            ],
             [
                 'level' => 'client',
                 'callback' => ['this', 'getClientTicketsTotal'],

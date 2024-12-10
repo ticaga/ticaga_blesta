@@ -1,0 +1,50 @@
+<?php
+    echo $this->Html->ifSet($message);
+
+    // Create widget
+	$this->Widget->clear();
+	$this->Widget->setStyleSheet($this->view_dir . "css/styles.css");
+	$this->Widget->create("Ticaga - Blesta");
+
+	$this->Form->create();
+
+?>
+<?php
+if ($this->Html->ifSet($count) && $count == false)
+{
+?>
+<div class="inner content">
+	<div class="pad">
+		<ul>
+			<li>
+				<?php
+					$this->Form->label("API URL", "api_url");
+					$this->Form->fieldText("api_url", "", ['id' => 'api_url']);
+				?>
+			</li>
+			<li>
+				<?php
+					$this->Form->label("API Key", "api_key");
+					$this->Form->fieldText("api_key", "", ['id' => 'api_key']);
+				?>
+			</li>
+			<li>
+				<?php
+					$this->Form->fieldHidden("company_id", "", ['id' => 'company_id']);
+				?>
+			</li>
+		</ul>
+	</div>
+	<div class="button_row">
+		<a class="btn btn-primary pull-right submit" href="#">Submit</a>
+	</div>
+</div>
+<?php 
+} else {
+?>
+<p>API Information Already Set.</p>
+<?php
+	}
+	$this->Form->end();
+	$this->Widget->end();
+?>
