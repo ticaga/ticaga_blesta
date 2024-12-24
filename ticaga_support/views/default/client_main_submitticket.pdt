@@ -12,26 +12,31 @@
 		$this->WidgetClient->create($this->_('TicagaSupportPlugin.index.create_ticket', true));
 		$this->WidgetClient->startBody();
 		$this->Form->create(null, ['id'=>'create_ticket_ticaga', 'enctype' => 'multipart/form-data', 'class' => 'disable-on-submit']);
-	?>
+
+		if ($client_id == false)
+		{
+		?>
+	    <div class="form-group">
+    		<?php
+    			$this->Form->label($this->_('TicagaSupportPlugin.index.public_name', true), "public_name");
+    			$this->Form->fieldText("public_name", null, ['id' => 'public_name', 'class' => 'form-control']);
+    		?>
+    	</div>
+    	<div class="form-group">
+        	<?php
+        		$this->Form->label($this->_('TicagaSupportPlugin.index.email_address', true), "email");
+        	    $this->Form->fieldText("email", null, ['id' => 'email', 'class' => 'form-control']);
+        	?>
+        </div>
+        <?php
+        	}
+        ?>
 		<div class="form-group">
 			<?php
 				$this->Form->label($this->_('TicagaSupportPlugin.index.subject', true), "summary");
 				$this->Form->fieldText("summary", null, ['id' => 'summary', 'class' => 'form-control']);
 			?>
 		</div>
-		<?php
-			if ($client_id == false)
-			{
-		?>
-		<div class="form-group">
-			<?php
-				$this->Form->label($this->_('TicagaSupportPlugin.index.email_address', true), "email");
-				$this->Form->fieldText("email", null, ['id' => 'email', 'class' => 'form-control']);
-			?>
-		</div>
-		<?php
-			}
-		?>
 		<div class="form-group">
 			<?php
 				$this->Form->label($this->_('TicagaSupportPlugin.index.carbon_copy',true), "cc");

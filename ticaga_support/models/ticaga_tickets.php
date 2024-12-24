@@ -35,13 +35,7 @@ class TicagaTickets extends TicagaSupportModel
     }
 	
 	public function getAPIInfoByCompanyIdCount(){
-        $res = $this->Record->select()->from("ticaga_blesta_settings")->where("ticaga_blesta_settings.company_id", "=", Configure::get('Blesta.company_id'))->numResults();
-		if ($res > 0)
-		{
-			return true;
-		} else {
-			return false;
-		}
+        return $this->Record->select()->from("ticaga_blesta_settings")->where("ticaga_blesta_settings.company_id", "=", Configure::get('Blesta.company_id'))->numResults();
     }
 	
     // Function to get the client ip address
@@ -80,6 +74,7 @@ class TicagaTickets extends TicagaSupportModel
     {
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
+
 		$department_id = $vars['department_id'];
 		$client_id = $vars['client_id'] ?? $vars['client_email'];
 		$priority = $vars['priority'] ?? "low";
@@ -91,19 +86,20 @@ class TicagaTickets extends TicagaSupportModel
 		
 		if ($cc != "null")
 		{
-		$ccid = implode(",",$cc);
-		$callvars = array('user_id' => $client_id, "subject" => $vars['summary'], "priority" => $priority, "content" => $details, "cc" => $ccid, "assigned" => "0", "department_id" => $department_id, "ip_address" => $ipaddress, 'public_email' => $email, 'public_name' => $name);	
+            $ccid = implode(",", $cc);
+            $callvars = array('user_id' => $client_id, "subject" => $vars['summary'], "priority" => $priority, "content" => $details, "cc" => $ccid, "assigned" => "0", "department_id" => $department_id, "ip_address" => $ipaddress, 'public_email' => $email, 'public_name' => $name);
 		} else {
-		$callvars = array('user_id' => $client_id, "subject" => $vars['summary'], "priority" => $priority, "content" => $details, "assigned" => "0", "department_id" => $department_id, "ip_address" => $ipaddress, 'public_email' => $email, 'public_name' => $name);
+		    $callvars = array('user_id' => $client_id, "subject" => $vars['summary'], "priority" => $priority, "content" => $details, "assigned" => "0", "department_id" => $department_id, "ip_address" => $ipaddress, 'public_email' => $email, 'public_name' => $name);
 		}
 		
 		$resp = $this->TicagaSettings->callAPIPost("tickets/open/" . $department_id,$callvars, $apiURL,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
-		if ($resp_test)
+
+        if ($resp_test)
 		{
-		return json_decode($resp['response']);	
+		    return json_decode($resp['response']);
 		} else {
-		return false;
+		    return false;
 		}
     }
 

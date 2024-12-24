@@ -132,99 +132,104 @@ class ClientMain extends TicagaSupportController
 					
 					if ($email == "")
 					{
-					$this->flashMessage('error', "Email is Required!", null, false);
-					$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/submitTicket/' . $this->get[0]);
-					return;
+                        $this->flashMessage('error', "Email is Required!", null, false);
+                        $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/submitTicket/' . $this->get[0]);
 					}
-					
-					
+
 					if (gettype($cc) == "array")
 					{
-					if (count($cc) > 1)
-					{
-						$ccid = explode(",",$cc);
-					} else {
-						$ccid = [0 => $cc];
-					}
-					} elseif (gettype($cc) == "string") {
-					$cctest = explode(",",$cc);
-					if (count($cctest) > 1)
-					{
-						$ccid = explode(",",$cc);
-					} else {
-						$ccid = [0 => $cc];
-					}
-					} else {
-					$ccid = [];
+                        if (count($cc) > 1)
+                        {
+                            $ccid = explode(",",$cc);
+                        } else {
+                            $ccid = [0 => $cc];
+                        }
+                    } elseif (gettype($cc) == "string") {
+                        $cctest = explode(",",$cc);
+                        if (count($cctest) > 1)
+                        {
+                            $ccid = explode(",",$cc);
+                        } else {
+                            $ccid = [0 => $cc];
+                        }
+                    } else {
+                        $ccid = [];
 					}
 
 					$submitarray = ["department_id" => $dept_id, "client_id" => $cid, "priority" => $priority, "summary" => $subject, "details" => $content, "cc" => $ccid, 'client_email' => $email,'public_name' => $email];
-					$ticketsubmit = $this->TicagaTickets->add($submitarray);	
+					$ticketsubmit = $this->TicagaTickets->add($submitarray);
+                    if($ticketsubmit)
+                    {
+                        $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/clientViewTicket/' .  $this->get[0]);
+                    }
 				}
 			} else {
 				$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments');
 			}
 		} else {
-		if ($deptinfo && $client_id != false && $deptinfo[0]->is_disabled == 0)
-		{
-			$deptjsondec = $deptinfo;
+            if ($deptinfo && $client_id != false && $deptinfo[0]->is_disabled == 0)
+            {
+                $deptjsondec = $deptinfo;
 
-		
-				$this->set('department_id', $this->get[0]);
-				$this->set('client_id', $client_id);
-				$this->set('is_highpriority_allowed', $prioritystatuses);
-				$client_var = $this->Clients->get($client_id);
-				$client_name = $client_var->first_name . " " . $client_var->last_name;
-				$client_email = $client_var->email;
 
-				if (!empty($this->post)) {
-					$dept_id = $this->get[0];
-					$priority = $this->post['priority'];
-					$subject = $this->post['summary'];
-					$content = $this->post['details'];
-					$email = $client_email;
-					$cid = 0;
-					$cc = $this->post['cc'];
-					$ccid = [];
+                    $this->set('department_id', $this->get[0]);
+                    $this->set('client_id', $client_id);
+                    $this->set('is_highpriority_allowed', $prioritystatuses);
+                    $client_var = $this->Clients->get($client_id);
+                    $client_name = $client_var->first_name . " " . $client_var->last_name;
+                    $client_email = $client_var->email;
 
-					if (gettype($cc) == "array")
-					{
-					if (count($cc) > 1)
-					{
-						$ccid = explode(",",$cc);
-					} else {
-						$ccid = [0 => $cc];
-					}
-					} elseif (gettype($cc) == "string") {
-					$cctest = explode(",",$cc);
-					if (count($cctest) > 1)
-					{
-						$ccid = explode(",",$cc);
-					} else {
-						$ccid = [0 => $cc];
-					}
-					} else {
-					$ccid = [];
-					}
+                    if (!empty($this->post)) {
+                        $dept_id = $this->get[0];
+                        $priority = $this->post['priority'];
+                        $subject = $this->post['summary'];
+                        $content = $this->post['details'];
+                        $email = $client_email;
+                        $cid = 0;
+                        $cc = $this->post['cc'];
+                        $ccid = [];
 
-					$submitarray = ["department_id" => $dept_id, "client_id" => $cid, "priority" => $priority, "summary" => $subject, "details" => $content, "cc" => $ccid, 'client_email' => $email, 'public_name' => $client_name];
-					$ticketsubmit = $this->TicagaTickets->add($submitarray);
-					if ($ticketsubmit != false)
-					{
-					$this->flashMessage('message', "Ticket Submitted", null, false);
-					$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');	
-					} else {
-					$this->flashMessage('error', "Failure Submitting Ticket", null, false);
-					$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments');
-					}
-				}
-			return $this->view->setView('client_main_submitticket', 'default');
-			return $this->renderAjaxWidgetIfAsync(false);
-		} else {
-			$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments');
-		}
-		return $this->view->setView('client_main_submitticket', 'default');
-		return $this->renderAjaxWidgetIfAsync(false);
+                        if (gettype($cc) == "array")
+                        {
+                        if (count($cc) > 1)
+                        {
+                            $ccid = explode(",",$cc);
+                        } else {
+                            $ccid = [0 => $cc];
+                        }
+                        } elseif (gettype($cc) == "string") {
+                        $cctest = explode(",",$cc);
+                        if (count($cctest) > 1)
+                        {
+                            $ccid = explode(",",$cc);
+                        } else {
+                            $ccid = [0 => $cc];
+                        }
+                        } else {
+                        $ccid = [];
+                        }
+
+                        $submitarray = ["department_id" => $dept_id, "client_id" => $cid, "priority" => $priority, "summary" => $subject, "details" => $content, "cc" => $ccid, 'client_email' => $email, 'public_name' => $client_name];
+                        $ticketsubmit = $this->TicagaTickets->add($submitarray);
+                        if ($ticketsubmit != false)
+                        {
+                        $this->flashMessage('message', "Ticket Submitted", null, false);
+                        $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');
+                        } else {
+                        $this->flashMessage('error', "Failure Submitting Ticket", null, false);
+                        $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments');
+                        }
+                    }
+
+                    return $this->view->setView('client_main_submitticket', 'default');
+                    return $this->renderAjaxWidgetIfAsync(false);
+
+            } else {
+                $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments');
+            }
+
+            return $this->view->setView('client_main_submitticket', 'default');
+            return $this->renderAjaxWidgetIfAsync(false);
 		}
   	}
   

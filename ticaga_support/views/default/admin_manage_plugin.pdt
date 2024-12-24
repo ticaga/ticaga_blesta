@@ -8,9 +8,7 @@
 
 	$this->Form->create();
 
-?>
-<?php
-if ($this->Html->ifSet($count) && $count == false)
+if ($api_info_exists != '1')
 {
 ?>
 <div class="inner content">
@@ -30,7 +28,7 @@ if ($this->Html->ifSet($count) && $count == false)
 			</li>
 			<li>
 				<?php
-					$this->Form->fieldHidden("company_id", "", ['id' => 'company_id']);
+					$this->Form->fieldHidden("type", "api_info", ['id' => 'type']);
 				?>
 			</li>
 		</ul>
@@ -39,10 +37,18 @@ if ($this->Html->ifSet($count) && $count == false)
 		<a class="btn btn-primary pull-right submit" href="#">Submit</a>
 	</div>
 </div>
-<?php 
+<?php
 } else {
 ?>
-<p>API Information Already Set.</p>
+<div class="inner content">
+	<div class="pad">
+		<ul>
+			<li>
+				Your Ticaga is already connected to this Blesta's installation.
+			</li>
+		</ul>
+	</div
+</div>
 <?php
 	}
 	$this->Form->end();

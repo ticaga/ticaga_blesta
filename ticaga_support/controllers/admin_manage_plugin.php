@@ -26,9 +26,6 @@ class AdminManagePlugin extends AppController
 		
 		// Load models
         Loader::loadModels($this, ['Staff', 'Companies', 'TicagaSupport.TicagaTickets', 'TicagaSupport.TicagaSettings']);
-		
-		$count = $this->TicagaTickets->getAPIInfoByCompanyIdCount();
-		$this->parent->view->set('api_info_exists', $count);
 
         // Get Plugin ID
         if (isset($this->plugin_id)) {
@@ -41,34 +38,43 @@ class AdminManagePlugin extends AppController
      */
     public function index()
     {
-		$this->init();
-        $this->uses(['Staff', 'Companies', 'TicagaSupport.TicagaTickets', 'TicagaSupport.TicagaSettings', 'Settings', 'Plugins']);
-		$this->parent->set('company_id', Configure::get('Blesta.company_id'));
+        $this->init();
+        $this->uses(['Staff', 'Companies', 'TicagaSupport.TicagaTickets', 'TicagaSupport.TicagaSettings', 'Settings', 'Plugins', 'PluginManager']);
+        $this->parent->set('company_id', Configure::get('Blesta.company_id'));
         // Manage actions
-		
-        if (!empty($this->post)) {
-          switch ($this->post['type']) {
-              case 'api_info':
-				  $company_id = Configure::get('Blesta.company_id');
-			 	  $api_key = $this->post['api_key'];
-				  $api_url = $this->post['api_url'];
-				  $arraypost = array("company_id" => $company_id, "api_key" => $api_key, "api_url" => $api_url);
-				  $result = $this->TicagaSettings->add($this->post);
-                  if ($result) {
-                    $this->parent->flashMessage('message', "Added API Info!", true);
-                  } else {
-                    $this->parent->flashMessage('error', "Error Adding API Info", true);
-                  }
-                  break;
-              default:
-                  $this->parent->flashMessage('error', "Sorry, we couldn't do that requested action.");
-                  break;
-              }
-          $this->redirect($this->base_uri . 'settings/company/plugins/manage/' . $this->plugin_id . '/');
-        }
 
-        // Set varriables
-        
-        return $this->partial('admin_manage_plugin');
+        $api_info_exists = $this->TicagaTickets->getAPIInfoByCompanyIdCount();
+
+        if (!empty($this->post)) {
+            switch ($this->post['type']) {
+                case 'api_info':
+                    $company_id = Configure::get('Blesta.company_id');
+                    $api_key = $this->post['api_key'];
+                    $api_url = $this->post['api_url'];
+                    if(!empty($api_key) && !empty($api_url))
+                    {
+                        $arraypost = array("company_id" => $company_id, "api_key" => $api_key, "api_url" => $api_url);
+                        $result = $this->TicagaSettings->add($arraypost);
+                    } else {
+                        $result = 'false';
+                    }
+                    if ($result == 'true') {
+                        $this->flashMessage('message', "Congratulations, you've connected Blesta to Ticaga.", null, false);
+                        $this->redirect($this->base_uri . 'settings/company/plugins/manage/' . $this->plugin_id . '/');
+                    } else {
+                        $this->flashMessage('error', "Sorry, your account couldn't connect to Ticaga, please check your details.", null, false);
+                        $this->redirect($this->base_uri . 'settings/company/plugins/manage/' . $this->plugin_id . '/');
+                    }
+                    break;
+                default:
+                    $this->parent->flashMessage('error', "Sorry, we couldn't do that requested action.");
+                    break;
+            }
+            $this->redirect($this->base_uri . 'settings/company/plugins/manage/' . $this->plugin_id . '/');
+        } else {
+            return $this->partial('admin_manage_plugin',[
+                'api_info_exists' => $api_info_exists,
+            ]);
+        }
     }
 }
