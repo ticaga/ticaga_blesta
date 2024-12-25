@@ -38,14 +38,15 @@ class ClientMain extends TicagaSupportController
      */
     public function index()
     {
-		$client_id = $this->client_id;
+		$client_id = $this->Session->read('blesta_client_id');
 		$userExists = $this->TicagaTickets->doesUserExist();
 		
 
 		$departments_all = $this->TicagaTickets->getDepartmentsAll();
 		if ($userExists == false || $client_id == false)
 		{
-			$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments/');
+			$this->flashMessage('error', "Please Sync your account with Ticaga Please.", null, false);
+			$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/syncClientAccount/');
 		} elseif($userExists != false && $client_id > '0') {
 			
 			$client_var = $this->Clients->get($client_id);
