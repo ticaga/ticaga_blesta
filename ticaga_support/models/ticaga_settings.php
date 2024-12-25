@@ -205,7 +205,7 @@ class TicagaSettings extends TicagaSupportModel
 
         if ($this->Input->validates($vars)) {
             $fields = ['api_key','api_url','company_id'];
-			$this->Record->duplicate("api_url", "=", $vars['api_url'])->insert("ticaga_blesta_settings", array('api_key' => $vars['api_key'],'api_url' => $vars['api_url'], 'company_id' => $vars['company_id']));
+			$this->Record->duplicate("api_url", "=", $vars['api_url'])->insert("ticaga_settings", array('api_key' => $vars['api_key'],'api_url' => $vars['api_url'], 'company_id' => $vars['company_id']));
 
 			$apikeyInfo = $this->getAPIKeyExists($vars['api_url']);
 			if ($apikeyInfo == true)
@@ -235,7 +235,7 @@ class TicagaSettings extends TicagaSupportModel
 
         if ($this->Input->validates($vars)) {
             $fields = ['api_key','api_url'];
-            $this->Record->where('api_url', '=', $api_url)->update('ticaga_blesta_settings', $vars, $fields);
+            $this->Record->where('api_url', '=', $api_url)->update('ticaga_settings', $vars, $fields);
 
             return $api_url;
         }
@@ -249,8 +249,8 @@ class TicagaSettings extends TicagaSupportModel
     public function delete($api_url)
     {
         // Delete a record
-        $this->Record->from('ticaga_blesta_settings')->
-            where('ticaga_blesta_settings.api_url', '=', $api_url)->
+        $this->Record->from('ticaga_settings')->
+            where('ticaga_settings.api_url', '=', $api_url)->
             delete();
     }
 
@@ -265,18 +265,18 @@ class TicagaSettings extends TicagaSupportModel
      */
     private function getRecord(array $filters = [])
     {
-        $this->Record->select()->from('ticaga_blesta_settings');
+        $this->Record->select()->from('ticaga_settings');
 
         if (isset($filters['api_key'])) {
-            $this->Record->where('ticaga_blesta_settings.api_key', '=', $filters['api_key']);
+            $this->Record->where('ticaga_settings.api_key', '=', $filters['api_key']);
         }
 
         if (isset($filters['api_url'])) {
-            $this->Record->where('ticaga_blesta_settings.api_url', '=', $filters['api_url']);
+            $this->Record->where('ticaga_settings.api_url', '=', $filters['api_url']);
         }
 		
 		if (isset($filters['company_id'])) {
-            $this->Record->where('ticaga_blesta_settings.company_id', '=', $filters['company_id']);
+            $this->Record->where('ticaga_settings.company_id', '=', $filters['company_id']);
         }
 
         return $this->Record;

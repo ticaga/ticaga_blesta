@@ -67,7 +67,7 @@ class AdminManagePlugin extends AppController
                     }
                     break;
                 default:
-                    $this->parent->flashMessage('error', "Sorry, we couldn't do that requested action.");
+                    $this->flashMessage('error', "Sorry, we couldn't do that requested action.", null, false);
                     break;
             }
             $this->redirect($this->base_uri . 'settings/company/plugins/manage/' . $this->plugin_id . '/');

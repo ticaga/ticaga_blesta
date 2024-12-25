@@ -21,7 +21,7 @@ class ClientMain extends TicagaSupportController
         $this->structure->set('page_title', Language::_('ClientMain.index.page_title', true));
 		
 		$this->uses(['Staff', 'Companies', 'TicagaSupport.TicagaTickets', 'TicagaSupport.TicagaSettings', 'Input', 'Record', 'Session', 'Clients']);
-		
+
 		$this->client_id = $this->Session->read('blesta_client_id');
 		
 		$this->staff_id = $this->Session->read('blesta_staff_id');
@@ -38,14 +38,20 @@ class ClientMain extends TicagaSupportController
      */
     public function index()
     {
-		$client_id = $this->client_id;
+        $database_check = $this->Record->select()->from("ticaga_settings")->where("ticaga_settings.company_id", "=", Configure::get('Blesta.company_id'))->fetch();
+        if ($database_check == false) {
+            $this->flashMessage('error', "Error: The Ticaga API has not been provided.", null, false);
+            $this->redirect($this->client_uri);
+        }
+
+        $client_id  = $this->Session->read('blesta_client_id');
 		$userExists = $this->TicagaTickets->doesUserExist();
-		
 
 		$departments_all = $this->TicagaTickets->getDepartmentsAll();
 		if ($userExists == false || $client_id == false)
 		{
-			$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments/');
+            $this->flashMessage('error', "Please Sync your account with Ticaga Please.", null, false);
+            $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/sync/');
 		} elseif($userExists != false && $client_id > '0') {
 			
 			$client_var = $this->Clients->get($client_id);
@@ -236,27 +242,30 @@ class ClientMain extends TicagaSupportController
   	/**
      * Returns the view for showing syncing client account.
      */
-    public function syncClientAccount()
+    public function sync()
   	{
-		$client_id = $this->client_id ?? false;
+		$client_id = $this->client_id ?: false;
 		$userExists = $this->TicagaTickets->doesUserExist();
-		if ($client_id != false)
-		{
-			$res = $this->TicagaTickets->associateClientToTicaga($client_id);
-			if ($res)
-			{
-				$this->flashMessage('message', "User Information Synced Between Ticaga and Blesta", null, false);
-				$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');
-			} else {
-				$this->flashMessage('error', "Sorry a Error occurred syncing your profile from Ticaga. Please contact our support.", null, false);
-				$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');	
-			}	
+
+		if ($client_id != 'false' && $userExists = 'false') {
+            $email_address = $this->Clients->get($this->Session->read('blesta_id'))->email;
+            $ticaga_id = '1';
+
+            $res = $this->TicagaTickets->associateClientToTicaga($email_address, $ticaga_id);
+
+            echo var_dump($res);
+            die;
+            if ($res) {
+                $this->flashMessage('message', "User Information Synced Between Ticaga and Blesta", null, false);
+                $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');
+            } else {
+                $this->flashMessage('error', "Sorry a Error occurred syncing your profile from Ticaga. Please contact our support.", null, false);
+                $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');
+            }
 		 } else {
-			$this->flashMessage('error', "This requires a signed in user.", null, false);
-			$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');
-		 }
-		return $this->view->setView('client_main_syncclientaccount', 'default');
-		return $this->renderAjaxWidgetIfAsync(false);
+            return $this->view->setView('client_main_syncclientaccount', 'default');
+            return $this->renderAjaxWidgetIfAsync(false);
+        }
   	}
   
   

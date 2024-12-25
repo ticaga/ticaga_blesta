@@ -28,8 +28,7 @@ class TicagaSupportPlugin extends Plugin
     public function install($plugin_id)
     {
         try {
-            // Create database tables
-            // ticaga_blesta_settings
+            // Create table for Ticaga API information
             $this->Record
                 ->setField(
                     'api_key',
@@ -57,22 +56,30 @@ class TicagaSupportPlugin extends Plugin
                     ]
                 )
                 ->setKey(['api_url'], 'primary')
-                ->create('ticaga_blesta_settings', true);
+                ->create('ticaga_settings', true);
 				
-				// Create database tables
-            // ticaga_blesta_user_association
+            // Create table ticaga_billing for User connections via API.
             $this->Record
                 ->setField(
-                    'user_ticaga',
+                    'ticaga_userid',
                     [
-                        'type' => 'VARCHAR',
-                        'size' => "255",
+                        'type' => 'INT',
+                        'size' => "10",
                         'is_null' => false,
-                        'default' => '',
+                        'default' => '0',
                     ]
                 )
 				->setField(
-                    'user_blesta',
+                    'billing_userid',
+                    [
+                        'type' => 'INT',
+                        'size' => "10",
+                        'is_null' => false,
+                        'default' => '0',
+                    ]
+                )
+                ->setField(
+                    'email_address',
                     [
                         'type' => 'VARCHAR',
                         'size' => "255",
@@ -81,7 +88,7 @@ class TicagaSupportPlugin extends Plugin
                     ]
                 )
                 ->setField(
-                    'email_ticaga',
+                    'billing_system',
                     [
                         'type' => 'VARCHAR',
                         'size' => "255",
@@ -98,8 +105,8 @@ class TicagaSupportPlugin extends Plugin
                         'default' => Configure::get('Blesta.company_id'),
                     ]
                 )
-                ->setKey(['user_ticaga'], 'primary')
-                ->create('ticaga_blesta_users', true);
+                ->setKey(['ticaga_userid'], 'primary')
+                ->create('ticaga_billing', true);
 				
         } catch (Exception $e) {
             // Error adding... no permission?
@@ -120,8 +127,8 @@ class TicagaSupportPlugin extends Plugin
         if ($last_instance) {
             try {
                 // Remove database tables
-                $this->Record->drop('ticaga_blesta_settings');
-				$this->Record->drop('ticaga_blesta_users');
+                $this->Record->drop('ticaga_settings');
+				$this->Record->drop('ticaga_billing');
             } catch (Exception $e) {
                 // Error dropping... no permission?
                 $this->Input->setErrors(['db' => ['create' => $e->getMessage()]]);
@@ -140,16 +147,7 @@ class TicagaSupportPlugin extends Plugin
     {
         // Upgrade if possible
         if (version_compare($this->version, $current_version, '>')) {
-          // Upgrade to 1.0.1 (Second Revision/Release)
-          if (version_compare($current_version, '1.0.1', '<')) {
-            //Create IP Address table
-            $this->Record->setField('user_ticaga', ['type' => 'varchar', 'size' => 255])
-                    ->setField('user_blesta', ['type' => 'varchar', 'size' => 255])
-                    ->setField('email_ticaga', ['type' => 'varchar', 'size' => 255])
-                    ->setField('company_id', ['type' => 'int', 'size' => 10])
-                    ->setKey(['user_ticaga'], 'primary')
-                    ->create('ticaga_blesta_users', true);
-          }
+         return true;
 		}
     }
 
@@ -251,15 +249,10 @@ class TicagaSupportPlugin extends Plugin
     public function getPermissionGroups()
     {
     }
-	
-	public function getAPIInfoByCompanyId(){
-        $this->uses(['Record']);
-        return $this->Record->select()->from("ticaga_blesta_settings")->where("ticaga_blesta_settings.company_id", "=", Configure::get('Blesta.company_id'))->fetch();
-    }
 
 	public function getAPIInfoByCompanyIdProvided(){
         $this->uses(['Record']);
-        return $this->Record->select()->from("ticaga_blesta_settings")->where("ticaga_blesta_settings.company_id", "=", Configure::get('Blesta.company_id'))->fetch();
+        return $this->Record->select()->from("ticaga_settings")->where("ticaga_settings.company_id", "=", Configure::get('Blesta.company_id'))->fetch();
 	}
 	
 	/**
