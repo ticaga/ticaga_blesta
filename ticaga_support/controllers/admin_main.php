@@ -60,57 +60,6 @@ class AdminMain extends TicagaSupportController
 				$this->set('depts', []);
 			}
 	}
-  
-  	/**
-     * Returns the view for submitting ticket as Client
-     */
-    public function adminClientTicketSubmit()
-	{
-		$client_id = $this->get[0] ?? false;
-		$userExists = $this->TicagaTickets->doesUserExist();
-		
-		if (!empty($this->post)) {
-
-			$dept_id = $this->post["department_id"];
-			$cid = $client_id ?? 0;
-			$priority = $this->post['priority'];
-			$subject = $this->post['summary'];
-			$content = $this->post['details'];
-			$cc = $this->post['cc'];
-			$ccid = [];
-
-			if (count($cc) > 1)
-			{
-				$ccid = explode(",",$cc);
-			} else {
-				$ccid = [0 => $cc];
-			}
-
-			$submitarray = ["department_id" => $dept_id, "client_id" => $cid, "priority" => $priority, "summary" => $subject, "details" => $details, "cc" => $ccid];
-			$ticketsubmit = $this->TicagaTickets->open($submitarray);
-		} else {
-			$this->flashMessage('message', "Sorry, but no information was submitted to submit ticket. Please ensure all fields are filled in and try again.", null, false);
-			$this->redirect($this->base_uri . 'plugin/ticaga_support/admin_main/index/');
-		}
-	}
-
-	/**
-     * Returns the view for a list of extensions
-     */
-    public function viewTicket()
-    {
-		$ticket_id = $this->get[0];
-		$ticket = $this->TicagaTickets->get($ticket_id);
-		echo '<pre>';echo var_dump($ticket);echo '</pre>';
-		if ($ticket == false)
-		{
-			$this->flashMessage('message', "Sorry, No Ticket by that ID Exists", null, false);
-    		$this->redirect($this->base_uri . 'plugin/ticaga_support/admin_main/index');	
-			$this->set('ticket', []);
-		} else {
-			$this->set('ticket', $ticket);
-		}
-    }
 	
 	public function addAPIInfo()
     {
@@ -126,10 +75,10 @@ class AdminMain extends TicagaSupportController
 
             // Parse result
             if ($result) {
-                $this->flashMessage('message', "Added API Info!", null, false);
+                $this->flashMessage('message', "Success: API information has been added.", null, false);
                 $this->redirect($this->base_uri . 'plugin/ticaga_support/admin_main/index/');
             } else {
-                $this->setMessage('error', "Sorry, API Information could not be validated, try again.", false, null, false);
+                $this->setMessage('error', "Sorry, API Information could not be validated, try again.", null, false);
             }
         }
         

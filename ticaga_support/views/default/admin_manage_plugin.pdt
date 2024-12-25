@@ -4,7 +4,7 @@
     // Create widget
 	$this->Widget->clear();
 	$this->Widget->setStyleSheet($this->view_dir . "css/styles.css");
-	$this->Widget->create("Ticaga - Blesta");
+	$this->Widget->create("Ticaga API Information");
 
 	$this->Form->create();
 
