@@ -38,15 +38,15 @@ class ClientMain extends TicagaSupportController
      */
     public function index()
     {
-		$client_id = $this->Session->read('blesta_client_id');
+		$client_id = $this->Session->read('blesta_client_id') ?? null;
 		$userExists = $this->TicagaTickets->doesUserExist();
 		
 
 		$departments_all = $this->TicagaTickets->getDepartmentsAll();
-		if ($userExists == false || $client_id == false)
+		if ($userExists == false && $client_id == false)
 		{
-			$this->flashMessage('error', "Please Sync your account with Ticaga Please.", null, false);
-			$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/syncClientAccount/');
+			$this->flashMessage('error', "Please Notify our Support. Tell Them Ticaga Error Code NOAPISET-BLESTA-001", null, false);
+			return;
 		} elseif($userExists != false && $client_id > '0') {
 			
 			$client_var = $this->Clients->get($client_id);
