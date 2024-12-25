@@ -52,3 +52,6 @@ $lang['TicagaSupportPlugin.index.submit'] = "Submit";
 // Admin Area
 $lang['TicagaSupportPlugin.admin.title'] = "Support";
 $lang['TicagaSupportPlugin.admin.ticket_title'] = "Viewing Ticket";
+
+//Errors
+$lang['TicagaSupportPlugin.!error.error_101'] = "Please Notify our Support. Tell Them Ticaga Error Code NOAPISET-BLESTA-101";

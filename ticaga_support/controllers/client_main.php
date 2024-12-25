@@ -38,15 +38,12 @@ class ClientMain extends TicagaSupportController
      */
     public function index()
     {
-		$client_id = $this->Session->read('blesta_client_id') ?? null;
+		$client_id = $this->Session->read('blesta_client_id');
 		$userExists = $this->TicagaTickets->doesUserExist();
-		
-
 		$departments_all = $this->TicagaTickets->getDepartmentsAll();
-		if ($userExists == false && $client_id == false)
+		if ($client_id == 0)
 		{
-			$this->flashMessage('error', "Please Notify our Support. Tell Them Ticaga Error Code NOAPISET-BLESTA-001", null, false);
-			return;
+			$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments/');
 		} elseif($userExists != false && $client_id > '0') {
 			
 			$client_var = $this->Clients->get($client_id);
@@ -62,6 +59,7 @@ class ClientMain extends TicagaSupportController
 			{
 				$this->set('tickets', []);
 				$this->set('depts', []);
+				$this->set('error_101', false);
 			} else {
 				$this->set('tickets', $tickets);
 				$this->set('depts', $departments_all);

@@ -6,6 +6,13 @@
     <?php
     }
         echo (isset($message) ? $message : null);
+		
+		if (isset($error_101) && $error_101 == true)
+		{
+			echo '<div style="padding: 10px; text-align: center; background-color: #d9534f; color: #f9e2e2;">';
+			echo $this->_('TicagaSupportPlugin.!error.error_101',true);
+			echo '</div>';
+		}			
 
         $this->Widget->clear();
         $link_buttons = [

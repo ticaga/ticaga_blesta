@@ -701,7 +701,7 @@ class TicagaTickets extends TicagaSupportModel
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
 		$ipaddress = $this->get_client_ip_server();
-		$client_id = $this->Session->read("blesta_client_id") ?? null;
+		$client_id = $this->Session->read("blesta_client_id") ?? false;
 		if ($client_id == null)
 		{
 			return false;
