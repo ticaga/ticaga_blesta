@@ -40,7 +40,7 @@ $lang['TicagaSupportPlugin.index.tickets_overview'] = "Tickets Overview";
 $lang['TicagaSupportPlugin.index.department'] = "Department";
 $lang['TicagaSupportPlugin.index.status'] = "Status";
 $lang['TicagaSupportPlugin.index.create_ticket'] = "Create a ticket";
-$lang['TicagaSupportPlugin.index.no_tickets'] = 'Currently no tickets.';
+$lang['TicagaSupportPlugin.index.no_tickets'] = "You currently don't have any tickets.";
 
 // Viewing Ticket
 $lang['TicagaSupportPlugin.index.ticket'] = "Ticket";
@@ -55,3 +55,4 @@ $lang['TicagaSupportPlugin.index.sync_client_id'] = "Ticaga Customer ID";
 $lang['TicagaSupportPlugin.index.sync_email_address'] = "Ticaga Email Address";
 $lang['TicagaSupportPlugin.index.sync_example_id'] = "Customer ID is under your Ticaga Profile.";
 $lang['TicagaSupportPlugin.index.sync_email_example'] = "Your Ticaga email address must match your Blesta email address.";
+$lang['TicagaSupportPlugin.index.sync'] = "Connect";

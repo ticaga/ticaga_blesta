@@ -301,17 +301,13 @@ class TicagaTickets extends TicagaSupportModel
 		$ipaddress = $this->get_client_ip_server();
 		if ($vars['staff_id'] != null)
 		{
-		$callvars = array('response_user_id' => $response_user_id, "ticket_number" => $ticket_id, "response_content" => $details, "is_note" => $isnote, "agent_response" => "1");
-		
-		$resp = $this->TicagaSettings->callAPIPost("responses/reply",$callvars, $apiURL,$apiKey);
-		
-        return $resp;	
+            $callvars = array('response_user_id' => $response_user_id, "ticket_number" => $ticket_id, "response_content" => $details, "is_note" => $isnote, "agent_response" => "1");
+            $resp = $this->TicagaSettings->callAPIPost("responses/reply",$callvars, $apiURL,$apiKey);
+            return $resp;
 		} else {
-		$callvars = array('response_user_id' => $response_user_id, "ticket_number" => $ticket_id, "response_content" => $details, "is_note" => $isnote, "agent_response" => "0");
-		
-		$resp = $this->TicagaSettings->callAPIPost("responses/reply",$callvars, $apiURL,$apiKey);
-		
-        return $resp;
+            $callvars = array('response_user_id' => $response_user_id, "ticket_number" => $ticket_id, "response_content" => $details, "is_note" => $isnote, "agent_response" => "0");
+            $resp = $this->TicagaSettings->callAPIPost("responses/reply",$callvars, $apiURL,$apiKey);
+            return $resp;
 		}
     }
 
@@ -344,11 +340,12 @@ class TicagaTickets extends TicagaSupportModel
 		$staff_id = $this->Session->read("blesta_staff_id") ?? $this->Session->read("blesta_client_id");
 		$resp = $this->TicagaSettings->callAPI("tickets/countbystatus/" . $status, $apiURL,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
-		if ($resp_test)
+
+        if ($resp_test)
 		{
-		return json_decode($resp['response']);
+		    return json_decode($resp['response']);
 		} else {
-		return false;
+		    return false;
 		}
     }
 
@@ -375,22 +372,22 @@ class TicagaTickets extends TicagaSupportModel
 		$replies_info_array = [];
 		if ($resp_test)
 		{
-		$ticket_info = json_decode($resp['response']);
-		if ($replies)
-		{
-		  foreach ($replies as $reply)
-		  {
-			$userinfo_reply = $this->getUserInfo($reply->response_user_id)[0];
-			$a_array = array("name" => $userinfo_reply->name);
-			$replies_info_array[$reply->id] = $a_array;
-			array_merge($replies_info_array[$reply->id],$replies_array);
-		  }	
-		}
+		    $ticket_info = json_decode($resp['response']);
+            if ($replies)
+            {
+              foreach ($replies as $reply)
+              {
+                $userinfo_reply = $this->getUserInfo($reply->response_user_id)[0];
+                $a_array = array("name" => $userinfo_reply->name);
+                $replies_info_array[$reply->id] = $a_array;
+                array_merge($replies_info_array[$reply->id],$replies_array);
+              }
+		    }
 
-		$deptinfo = $this->getDepartmentsByID($ticket_info[0]->department_id);
-		return array("ticket" => $ticket_info, "replies" => $replies_array, "dept_info" => $deptinfo);
+		    $deptinfo = $this->getDepartmentsByID($ticket_info[0]->department_id);
+		    return array("ticket" => $ticket_info, "replies" => $replies_array, "dept_info" => $deptinfo);
 		} else {
-		return false;
+		    return false;
 		}
     }
 
@@ -414,11 +411,11 @@ class TicagaTickets extends TicagaSupportModel
 		$replies = $this->getReplies($code);
 		if ($resp_test && $replies)
 		{
-		$ticket_info = json_decode($resp['response']);
-		$userinfo = $this->getUserInfo($ticket_info->user_id);
-		return array("ticket" => $ticket_info, "replies" => $replies, "userinfo" => $userinfo);
+            $ticket_info = json_decode($resp['response']);
+            $userinfo = $this->getUserInfo($ticket_info->user_id);
+            return array("ticket" => $ticket_info, "replies" => $replies, "userinfo" => $userinfo);
 		} else {
-		return false;
+		    return false;
 		}
     }
 	
@@ -526,11 +523,12 @@ class TicagaTickets extends TicagaSupportModel
 		$staff_id = $this->Session->read("blesta_staff_id") ?? $this->Session->read("blesta_client_id");
 		$resp = $this->TicagaSettings->callAPI("tickets/countbystatus/" . $status, $apiURL,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
-		if ($resp_test)
+
+        if ($resp_test)
 		{
-		return json_decode($resp['response']);
+		    return json_decode($resp['response']);
 		} else {
-		return false;
+		    return false;
 		}
     }
 
@@ -567,9 +565,9 @@ class TicagaTickets extends TicagaSupportModel
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		if ($resp_test)
 		{
-		return json_decode($resp['response']);
+		    return json_decode($resp['response']);
 		} else {
-		return false;
+		    return false;
 		}
     }
 	
@@ -589,9 +587,9 @@ class TicagaTickets extends TicagaSupportModel
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		if ($resp_test)
 		{
-		return json_decode($resp['response'],true);
+		    return json_decode($resp['response'],true);
 		} else {
-		return false;
+		    return false;
 		}
     }
 	
@@ -633,9 +631,9 @@ class TicagaTickets extends TicagaSupportModel
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		if ($resp_test)
 		{
-		return json_decode($resp['response']);
+		    return json_decode($resp['response']);
 		} else {
-		return false;
+		    return false;
 		}
     }
 
@@ -753,17 +751,17 @@ class TicagaTickets extends TicagaSupportModel
 		{
 			return false;
 		} else {
-		$resp = $this->TicagaSettings->callAPI("tickets/user/" . $client_id, $apiURL,$apiKey);
-		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
-		if ($resp_test)
-		{
-		$jsondec = json_decode($resp['response']);
-		$dept_resp = $this->TicagaSettings->callAPI("departments/byid/" . $jsondec[0]->department_id, $apiURL,$apiKey);
-		$jsondec_dept_resp = json_decode($dept_resp['response']);
-		return $jsondec;
-		} else {
-		return false;
-		}
+            $resp = $this->TicagaSettings->callAPI("tickets/user/" . $client_id, $apiURL,$apiKey);
+            $resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
+            if ($resp_test)
+            {
+                $jsondec = json_decode($resp['response']);
+                $dept_resp = $this->TicagaSettings->callAPI("departments/byid/" . $jsondec[0]->department_id, $apiURL,$apiKey);
+                $jsondec_dept_resp = json_decode($dept_resp['response']);
+                return $jsondec;
+            } else {
+                return false;
+            }
 	  }
     }
 	
@@ -812,7 +810,7 @@ class TicagaTickets extends TicagaSupportModel
 		
 		if ($resp_test)
 		{
-		return json_decode($resp['response'],true);	
+		return json_decode($resp['response'],true);
 		} else {
 		return false;
 		}
@@ -835,7 +833,7 @@ class TicagaTickets extends TicagaSupportModel
 		
 		if ($resp_test)
 		{
-		return $resp['response'];	
+		return $resp['response'];
 		} else {
 		return false;
 		}
@@ -858,7 +856,7 @@ class TicagaTickets extends TicagaSupportModel
 		
 		if ($resp_test)
 		{
-		return json_decode($resp['response']);	
+		return json_decode($resp['response']);
 		} else {
 		return false;
 		}
@@ -880,7 +878,7 @@ class TicagaTickets extends TicagaSupportModel
 		
 		if ($resp_test)
 		{
-		return json_decode($resp['response'],true);	
+		return json_decode($resp['response'],true);
 		} else {
 		return false;
 		}
@@ -902,7 +900,7 @@ class TicagaTickets extends TicagaSupportModel
 		
 		if ($resp_test)
 		{
-		return json_decode($resp['response'],true);	
+		return json_decode($resp['response'],true);
 		} else {
 		return false;
 		}
@@ -924,7 +922,7 @@ class TicagaTickets extends TicagaSupportModel
 		
 		if ($resp_test)
 		{
-		return json_decode($resp['response'],true);	
+		return json_decode($resp['response'],true);
 		} else {
 		return false;
 		}
@@ -1099,7 +1097,7 @@ class TicagaTickets extends TicagaSupportModel
 
         return $contact_emails;
 		}
-        
+
       }
 	}
 

@@ -67,7 +67,9 @@
                 <td colspan="7">
                     <div class="empty_section">
                         <div class="empty_box">
-                            <p><?php echo $this->_('TicagaSupportPlugin.index.no_tickets', true);?></p>
+                            <div class="alert alert-info">
+                                <p><?php echo $this->_('TicagaSupportPlugin.index.no_tickets', true);?></p>
+                            </div>
                         </div>
                     </div>
                 </td>
