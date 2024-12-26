@@ -1,50 +1,35 @@
 <?php
-    echo $this->Html->ifSet($message);
-
-    // Create widget
-	$this->Widget->clear();
-	$this->Widget->setStyleSheet($this->view_dir . "css/styles.css");
-	$this->Widget->create("Open Client Ticket");
-
-	$this->Form->create();
-
+    // Don't show this container when only rendering the widget section
+    if (!(isset($render_section) ? $render_section : null)) {
 ?>
-<?php 
-if ($client_id != false)
-{
+    <div class="col-md-12">
+    <?php
+    }
+    	echo (isset($message) ? $message : null);
+		// Create widget
+		$this->Widget->clear();
+		$this->Widget->setStyleSheet($this->view_dir . "css/styles.css");
+		$this->WidgetClient->create($this->_('TicagaSupportPlugin.index.sync_account', true));
+		$this->WidgetClient->startBody();
+		$this->Form->create(null, ['id'=>'sync_account', 'enctype' => 'multipart/form-data', 'class' => 'disable-on-submit']);
 ?>
-				<tr>
-                <td colspan="7">
-                    <div class="empty_section">
-                        <div class="empty_box">
-                            <div class="alert alert-warning">
-							<strong>Attention!</strong>
-							<br/>
-							This is coming later.
-                        </div>
-                    </div>
-                </td>
-            </tr>
+        <div class="form-group">
+    		<?php
+    			$this->Form->label($this->_('TicagaSupportPlugin.index.sync_client_id', true), "ticaga_id");
+    			$this->Form->fieldText("ticaga_id", null, ['id' => 'ticaga_id', 'class' => 'form-control', 'placeholder' => $this->_('TicagaSupportPlugin.index.sync_example_id', true)]);
+    		?>
+    	</div>
+    	<div class="form-group">
+        	<?php
+        		$this->Form->label($this->_('TicagaSupportPlugin.index.sync_email_address', true), "email_address");
+        	    $this->Form->fieldText("email_address", null, ['id' => 'email_address', 'class' => 'form-control', 'placeholder' => $this->_('TicagaSupportPlugin.index.sync_email_example', true)]);
+        	?>
+        </div>
+		<button type="submit" class="btn btn-light float-right">
+            <?php echo $this->_('TicagaSupportPlugin.index.create', true);?>
+        </button>
 <?php
-	$this->Form->end();
-	$this->Widget->end();
-} else {
-?>
-<tr>
-                <td colspan="7">
-                    <div class="empty_section">
-                        <div class="empty_box">
-                            <div class="alert alert-warning">
-							<strong>Attention!</strong>
-							<br/>
-							This is for Client Usage Only, please click the below to go to the Guests Departments page
-							<br/>
-							Please <a href="<?php echo $this->base_uri;?>/plugin/ticaga_support/client_main/guestTicketChooseDept">Click Here</a> to go to the guest portal for opening tickets.
-							</div>
-                        </div>
-                    </div>
-                </td>
-            </tr>
-<?php
-}
+        $this->Form->end();
+        $this->WidgetClient->endBody();
+        $this->WidgetClient->end();
 ?>

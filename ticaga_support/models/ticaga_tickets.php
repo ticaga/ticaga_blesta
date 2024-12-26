@@ -436,24 +436,24 @@ class TicagaTickets extends TicagaSupportModel
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
 		$ipaddress = $this->get_client_ip_server();
-		$client_id = $this->Session->read("blesta_client_id") ?? false;
+		$client_id = $this->Session->read("blesta_client_id") ?: false;
 		$resp = $this->TicagaSettings->callAPI("tickets/" . $code, $apiURL,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		$replies = $this->getReplies($code);
 		if ($resp_test)
 		{
             $ticket_info = json_decode($resp['response']);
-            $client_var = $this->Clients->get($client_id);
-            $client_email = $client_var->email ? $client_var->email : $ticket_info[0]->public_email;
+            $client_var = $this->Record->select()->from("ticaga_billing")->where("ticaga_billing.billing_userid", "=", $client_id)->fetch();
 
-            echo var_dump($client_email);die;
-            if ($client_id == $ticket_info[0]->user_id)
+            $client_email = $client_var->email_address ?: $ticket_info[0]->public_email;
+
+            if ($client_var->ticaga_userid == $ticket_info[0]->user_id)
             {
                 return true;
             } else {
-                if ($client_email != false){
+                if ($client_email){
                     $userinfo = $this->getUserInfoByEmail($client_email);
-                    $userinfobyid = $this->getUserInfo($client_id);
+                    $userinfobyid = $this->getUserInfo($client_var->ticaga_userid);
                     if ($ticket_info[0]->public_email == $client_email || $ticket_info[0]->user_id == $userinfo[0]->id || $ticket_info[0]->user_id == $userinfobyid[0]->id)
                     {
                         return true;
@@ -471,33 +471,33 @@ class TicagaTickets extends TicagaSupportModel
      * @param int $id The id of the client to fetch
      * @return mixed An stdClass object representing the ticket, or false if none exist
      */
-    public function associateClientToTicaga($email_address, $ticaga_id)
+    public function connectAccounts($email_address, $ticaga_id)
     {
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
 		$ipaddress = $this->get_client_ip_server();
 
-		$client_id = $this->Session->read("blesta_client_id") ?: false;
+		$client_id = $this->Session->read("blesta_client_id");
 
 		if ($email_address != false)
         {
-			  $userinfo = $this->getUserInfoByEmail($email_address);
+              $blesta_email = $this->Clients->get($this->Session->read('blesta_id'))->email;
+              $ticaga_info = $this->getUserInfoById($ticaga_id);
 
-              if($userinfo[0]->email == $email_address && $userinfo[0]->id == $ticaga_id)
+              if($blesta_email == $email_address)
               {
-                  echo var_dump($userinfo);die;
-                  $this->Record->duplicate("ticaga_userid", "=", $ticaga_id)->insert("ticaga_billing", array('ticaga_userid' => $ticaga_id,'billing_userid' => $client_id, 'email_address' => $email_address, 'billing_system' => 'Blesta'));
-                  $lastinsertid = $this->Record->lastInsertId();
-              }else{
+                  if($ticaga_info[0]->id == $ticaga_id && $ticaga_info[0]->email == $blesta_email)
+                  {
+                      $this->Record->duplicate("ticaga_userid", "=", $ticaga_id)->insert("ticaga_billing", array('ticaga_userid' => $ticaga_id,'billing_userid' => $client_id, 'email_address' => $email_address, 'billing_system' => 'Blesta'));
+                      return true;
+                  } else {
+                      return false;
+                  }
+              } else {
                   return false;
               }
-
-			  if ($lastinsertid != null)
-			  {
-				  return true;
-			  } else {
-				  return false;
-			  }
+        } else {
+            return false;
         }
     }
 
@@ -638,6 +638,27 @@ class TicagaTickets extends TicagaSupportModel
 		return false;
 		}
     }
+
+    /**
+     * Gets all User Info to a specific ticket
+     *
+     * @param $user_id The ID of the user whose information to fetch
+     * @return array A list of replies to the given ticket
+     */
+    private function getUserInfoById($id)
+    {
+        $apiKey = $this->getAPIInfoByCompanyId()->api_key;
+        $apiURL = $this->getAPIInfoByCompanyId()->api_url;
+        $ipaddress = $this->get_client_ip_server();
+        $resp = $this->TicagaSettings->callAPI("clients/" . $id, $apiURL,$apiKey);
+        $resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
+        if ($resp_test)
+        {
+            return json_decode($resp['response']);
+        } else {
+            return false;
+        }
+    }
 	
 	/**
      * return Ticaga Specific User ID
@@ -709,20 +730,15 @@ class TicagaTickets extends TicagaSupportModel
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
 		$ipaddress = $this->get_client_ip_server();
-		$client_id = $this->Session->read("blesta_client_id") ?? null;
-		if ($client_id == null)
-		{
-			return false;
-		} else {
-		$resp = $this->TicagaSettings->callAPI("tickets/userinfo/" . $client_id, $apiURL,$apiKey);
-		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
-		if ($resp_test)
-		{
-		    return false;
-		} else {
-		    return true;
-		}
-	  }
+		$client_id = $this->Session->read("blesta_client_id") ?: 'false';
+
+		$response = $this->Record->select()->from("ticaga_billing")->where("ticaga_billing.billing_userid", "=", $client_id)->fetch();
+
+        if($response){
+            return $response;
+        } else {
+            return '0';
+        }
     }
 	
 	/**

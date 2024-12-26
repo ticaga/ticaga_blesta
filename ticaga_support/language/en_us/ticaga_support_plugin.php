@@ -49,6 +49,9 @@ $lang['TicagaSupportPlugin.index.response_title'] = "Reply";
 $lang['TicagaSupportPlugin.index.ticket_information'] = "Ticket Information";
 $lang['TicagaSupportPlugin.index.submit'] = "Submit";
 
-// Admin Area
-$lang['TicagaSupportPlugin.admin.title'] = "Support";
-$lang['TicagaSupportPlugin.admin.ticket_title'] = "Viewing Ticket";
+// Syncing Account
+$lang['TicagaSupportPlugin.index.sync_account'] = "Sync Ticaga account";
+$lang['TicagaSupportPlugin.index.sync_client_id'] = "Ticaga Customer ID";
+$lang['TicagaSupportPlugin.index.sync_email_address'] = "Ticaga Email Address";
+$lang['TicagaSupportPlugin.index.sync_example_id'] = "Customer ID is under your Ticaga Profile.";
+$lang['TicagaSupportPlugin.index.sync_email_example'] = "Your Ticaga email address must match your Blesta email address.";
