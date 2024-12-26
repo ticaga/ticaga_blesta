@@ -51,8 +51,15 @@ class ClientMain extends TicagaSupportController
 
 		if ($userExists->ticaga_userid < '0')
 		{
-            $this->flashMessage('error', "Please Sync your account with Ticaga.", null, false);
-            $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/sync/');
+            if($client_id)
+            {
+                $this->flashMessage('error', "Please Sync your account with Ticaga.", null, false);
+                $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/sync/');
+            } else {
+                // Could implement a guest submitting ticket.
+                $this->flashMessage('error', "Sorry you need to log in to open a ticket.", null, false);
+                $this->redirect($this->base_uri);
+            }
 		} else {
 
 			$tickets = $this->TicagaTickets->getTicketsByUserID($userExists->ticaga_userid);
