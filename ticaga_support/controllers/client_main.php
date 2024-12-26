@@ -271,7 +271,7 @@ class ClientMain extends TicagaSupportController
 		}
 		
 		if (!empty($this->post)) {
-			$client_var = $this->Clients->get($this->client_id);
+			$client_var = $this->Record->select()->from("ticaga_billing")->where("ticaga_billing.billing_userid", "=", $this->client_id)->fetch();
 			
 			if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
 				$ip_address = $_SERVER['HTTP_CLIENT_IP'];
@@ -280,8 +280,8 @@ class ClientMain extends TicagaSupportController
 			} else {
 				$ip_address = $_SERVER['REMOTE_ADDR'];
 			}
-					
-			$submitarray = ["response_user_id" => $this->client_id, "ticket_number" => $this->get[0], "response_content" => $this->post['response_content'], "response_title" => ""];
+
+			$submitarray = ["response_user_id" => $client_var->ticaga_userid, "ticket_number" => $this->get[0], "response_content" => $this->post['response_content'], "response_title" => "", ""];
 			
 			$response_submit = $this->TicagaTickets->addReply($this->get[0], $submitarray);
 
