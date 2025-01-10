@@ -61,7 +61,7 @@
                     <td><?php echo ucwords($this->Html->safe($ticket->priority)); ?></td>
                     <td><?php echo ucwords($this->Html->safe($ticket->status)); ?></td>
                     <td>
-                        <a href="<?php echo $this->base_uri; ?>plugin/ticaga_support/client_main/clientViewTicket/<?php echo $this->Html->safe($ticket->id); ?>/" class="btn btn-xs btn-light float-right">View Ticket</a>
+                        <a href="<?php echo $this->base_uri; ?>plugin/ticaga_support/client_main/clientViewTicket/<?php echo $this->Html->safe($ticket->id); ?>/" class="btn btn-xs btn-light float-right">Departments</a>
                     </td>
                 </tr>
             </tbody>
