@@ -128,7 +128,7 @@ class TicagaSettings extends TicagaSupportModel
 		/**
 	Calls the API to do requested Actions(Get Request)
 	*/
-	public function callAPI($action,$apiURL,$apiKey)
+	public function callAPI($action,$apiURL,$apiEmail,$apiKey)
 	{
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL,  $apiURL . "/api/" . $action);
@@ -137,7 +137,7 @@ class TicagaSettings extends TicagaSupportModel
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'Accept: application/json',
-            'Authorization: Bearer ' . $apiKey,
+            'Authorization: Basic ' . $apiEmail .':' . $apiKey,
         ]);
         
 		$result = curl_exec($ch);
@@ -161,7 +161,7 @@ class TicagaSettings extends TicagaSupportModel
 			/**
 	Calls the API to do requested Actions(POST Request)
 	*/
-	public function callAPIPost($action,$params,$apiURL,$apiKey)
+	public function callAPIPost($action,$params,$apiURL,$apiEmail,$apiKey)
 	{
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $apiURL . "/api/" . $action);
@@ -172,7 +172,7 @@ class TicagaSettings extends TicagaSupportModel
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, [
     'Accept: application/json',
-    'Authorization: Bearer ' . $apiKey,
+    'Authorization: Basic ' . $apiEmail .':' . $apiKeyy,
 ]);
 		$result = curl_exec($ch);
 		if (curl_errno($ch)) {
@@ -204,8 +204,8 @@ class TicagaSettings extends TicagaSupportModel
         $this->Input->setRules($this->getRules($vars));
 
         if ($this->Input->validates($vars)) {
-            $fields = ['api_key','api_url','company_id'];
-			$this->Record->duplicate("api_url", "=", $vars['api_url'])->insert("ticaga_settings", array('api_key' => $vars['api_key'],'api_url' => $vars['api_url'], 'company_id' => $vars['company_id']));
+            $fields = ['api_key','api_email','api_url','company_id'];
+			$this->Record->duplicate("api_url", "=", $vars['api_url'])->insert("ticaga_settings", array('api_key' => $vars['api_key'],'api_email' => $vars['api_email'],'api_url' => $vars['api_url'], 'company_id' => $vars['company_id']));
 
 			$apikeyInfo = $this->getAPIKeyExists($vars['api_url']);
 			if ($apikeyInfo == true)
@@ -234,7 +234,7 @@ class TicagaSettings extends TicagaSupportModel
         $this->Input->setRules($this->getRules($vars, true));
 
         if ($this->Input->validates($vars)) {
-            $fields = ['api_key','api_url'];
+            $fields = ['api_key','api_email','api_url'];
             $this->Record->where('api_url', '=', $api_url)->update('ticaga_settings', $vars, $fields);
 
             return $api_url;
@@ -271,6 +271,10 @@ class TicagaSettings extends TicagaSupportModel
             $this->Record->where('ticaga_settings.api_key', '=', $filters['api_key']);
         }
 
+		if (isset($filters['api_email'])) {
+            $this->Record->where('ticaga_settings.api_email', '=', $filters['api_email']);
+        }
+
         if (isset($filters['api_url'])) {
             $this->Record->where('ticaga_settings.api_url', '=', $filters['api_url']);
         }
@@ -300,6 +304,13 @@ class TicagaSettings extends TicagaSupportModel
                     'if_set' => $edit,
                     'rule' => true,
                     'message' => Language::_('TicagaBlestaSettings.!error.api_key.valid', true)
+                ]
+            ],
+            'api_email' => [
+                'valid' => [
+                    'if_set' => $edit,
+                    'rule' => true,
+                    'message' => Language::_('TicagaBlestaSettings.!error.api_email.valid', true)
                 ]
             ],
             'api_url' => [
