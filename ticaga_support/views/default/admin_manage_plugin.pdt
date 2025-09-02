@@ -7,9 +7,6 @@
 	$this->Widget->create("Ticaga API Information");
 
 	$this->Form->create();
-
-if ($api_info_exists != '1')
-{
 ?>
 <div class="inner content">
 	<div class="pad">
@@ -42,18 +39,6 @@ if ($api_info_exists != '1')
 	<div class="button_row">
 		<a class="btn btn-primary pull-right submit" href="#">Submit</a>
 	</div>
-</div>
-<?php
-} else {
-?>
-<div class="inner content">
-	<div class="pad">
-		<ul>
-			<li>
-				Your Ticaga is already connected to this Blesta's installation.
-			</li>
-		</ul>
-	</div
 </div>
 <?php
 	}
