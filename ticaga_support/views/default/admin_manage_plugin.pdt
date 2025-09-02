@@ -22,6 +22,12 @@ if ($api_info_exists != '1')
 			</li>
 			<li>
 				<?php
+					$this->Form->label("Admin Username", "api_email");
+					$this->Form->fieldText("api_email", "", ['id' => 'api_email']);
+				?>
+			</li>
+			<li>
+				<?php
 					$this->Form->label("API Key", "api_key");
 					$this->Form->fieldText("api_key", "", ['id' => 'api_key']);
 				?>
