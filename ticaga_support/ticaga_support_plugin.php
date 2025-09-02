@@ -31,6 +31,13 @@ class TicagaSupportPlugin extends Plugin
             // Create table for Ticaga API information
             $this->Record
                 ->setField(
+                    'api_email',
+                    [
+                        'type' => 'TEXT',
+                        'is_null' => true
+                    ]
+                )
+				->setField(
                     'api_key',
                     [
                         'type' => 'TEXT',
