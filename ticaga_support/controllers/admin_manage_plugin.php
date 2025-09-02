@@ -49,11 +49,12 @@ class AdminManagePlugin extends AppController
             switch ($this->post['type']) {
                 case 'api_info':
                     $company_id = Configure::get('Blesta.company_id');
-                    $api_key = $this->post['api_key'];
-                    $api_url = $this->post['api_url'];
-                    if(!empty($api_key) && !empty($api_url))
+                    $api_key	= $this->post['api_key'];
+                    $api_email 	= $this->post['api_email'];
+                    $api_url 	= $this->post['api_url'];
+                    if(!empty($api_key) && !empty($api_email) && !empty($api_url))
                     {
-                        $arraypost = array("company_id" => $company_id, "api_key" => $api_key, "api_url" => $api_url);
+                        $arraypost = array("company_id" => $company_id, "api_key" => $api_key, "api_email" => $api_email, "api_url" => $api_url);
                         $result = $this->TicagaSettings->add($arraypost);
                     } else {
                         $result = 'false';
