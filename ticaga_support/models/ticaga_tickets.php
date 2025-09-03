@@ -74,6 +74,7 @@ class TicagaTickets extends TicagaSupportModel
     {
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
 
 		$department_id = $vars['department_id'];
 		$client_id = $vars['client_id'] ?? $vars['client_email'];
@@ -92,7 +93,7 @@ class TicagaTickets extends TicagaSupportModel
 		    $callvars = array('user_id' => $client_id, "subject" => $vars['summary'], "priority" => $priority, "content" => $details, "assigned" => "0", "department_id" => $department_id, "ip_address" => $ipaddress, 'public_email' => $email, 'public_name' => $name);
 		}
 		
-		$resp = $this->TicagaSettings->callAPIPost("tickets/open/" . $department_id,$callvars, $apiURL,$apiKey);
+		$resp = $this->TicagaSettings->callAPIPost("tickets/open/" . $department_id, $callvars, $apiURL, $apiEmail, $apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 
         if ($resp_test)
@@ -294,6 +295,8 @@ class TicagaTickets extends TicagaSupportModel
 
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
+
 		$department_id = $vars['department_id'] ?? $ticketinfo["ticket"][0]->department_id;
 		$response_user_id = $vars['response_user_id'] ?? $vars['staff_id'];
 		$details = $vars["response_content"] ?? "";
@@ -302,11 +305,11 @@ class TicagaTickets extends TicagaSupportModel
 		if ($vars['staff_id'] != null)
 		{
             $callvars = array('response_user_id' => $response_user_id, "ticket_number" => $ticket_id, "response_content" => $details, "is_note" => $isnote, "agent_response" => "1");
-            $resp = $this->TicagaSettings->callAPIPost("responses/reply",$callvars, $apiURL,$apiKey);
+            $resp = $this->TicagaSettings->callAPIPost("responses/reply", $callvars, $apiURL, $apiEmail, $apiKey);
             return $resp;
 		} else {
             $callvars = array('response_user_id' => $response_user_id, "ticket_number" => $ticket_id, "response_content" => $details, "is_note" => $isnote, "agent_response" => "0");
-            $resp = $this->TicagaSettings->callAPIPost("responses/reply",$callvars, $apiURL,$apiKey);
+            $resp = $this->TicagaSettings->callAPIPost("responses/reply", $callvars, $apiURL, $apiEmail, $apiKey);
             return $resp;
 		}
     }
@@ -336,9 +339,11 @@ class TicagaTickets extends TicagaSupportModel
     {
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
+
 		$ipaddress = $this->get_client_ip_server();
 		$staff_id = $this->Session->read("blesta_staff_id") ?? $this->Session->read("blesta_client_id");
-		$resp = $this->TicagaSettings->callAPI("tickets/countbystatus/" . $status, $apiURL,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("tickets/countbystatus/" . $status, $apiURL, $apiEmail,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 
         if ($resp_test)
@@ -363,9 +368,11 @@ class TicagaTickets extends TicagaSupportModel
     {
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
+
 		$ipaddress = $this->get_client_ip_server();
 		$staff_id = $this->Session->read("blesta_staff_id") ?? $this->Session->read("blesta_client_id");
-		$resp = $this->TicagaSettings->callAPI("tickets/" . $ticket_id, $apiURL,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("tickets/" . $ticket_id, $apiURL, $apiEmail, $apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		$replies = $this->getReplies($ticket_id);
 		$replies_array = $this->getRepliesAsArray($ticket_id);
@@ -404,9 +411,11 @@ class TicagaTickets extends TicagaSupportModel
     {
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
+
 		$ipaddress = $this->get_client_ip_server();
 		$staff_id = $this->Session->read("blesta_staff_id") ?? $this->Session->read("blesta_client_id");
-		$resp = $this->TicagaSettings->callAPI("tickets/" . $code, $apiURL,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("tickets/" . $code, $apiURL,$apiEmail,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		$replies = $this->getReplies($code);
 		if ($resp_test && $replies)
@@ -432,9 +441,11 @@ class TicagaTickets extends TicagaSupportModel
     {
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
+
 		$ipaddress = $this->get_client_ip_server();
 		$client_id = $this->Session->read("blesta_client_id") ?: false;
-		$resp = $this->TicagaSettings->callAPI("tickets/" . $code, $apiURL,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("tickets/" . $code, $apiURL,$apiEmail,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		$replies = $this->getReplies($code);
 		if ($resp_test)
@@ -470,8 +481,6 @@ class TicagaTickets extends TicagaSupportModel
      */
     public function connectAccounts($email_address, $ticaga_id)
     {
-        $apiKey = $this->getAPIInfoByCompanyId()->api_key;
-		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
 		$ipaddress = $this->get_client_ip_server();
 
 		$client_id = $this->Session->read("blesta_client_id");
@@ -519,9 +528,11 @@ class TicagaTickets extends TicagaSupportModel
     {
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
+
 		$ipaddress = $this->get_client_ip_server();
 		$staff_id = $this->Session->read("blesta_staff_id") ?? $this->Session->read("blesta_client_id");
-		$resp = $this->TicagaSettings->callAPI("tickets/countbystatus/" . $status, $apiURL,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("tickets/countbystatus/" . $status, $apiURL,$apiEmail,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 
         if ($resp_test)
@@ -559,9 +570,11 @@ class TicagaTickets extends TicagaSupportModel
     {
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
+
 		$ipaddress = $this->get_client_ip_server();
 		$staff_id = $this->Session->read("blesta_staff_id") ?? $this->Session->read("blesta_client_id");
-		$resp = $this->TicagaSettings->callAPI("responses/" . $ticket_id, $apiURL,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("responses/" . $ticket_id, $apiURL,$apiEmail,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		if ($resp_test)
 		{
@@ -581,9 +594,11 @@ class TicagaTickets extends TicagaSupportModel
     {
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
+
 		$ipaddress = $this->get_client_ip_server();
 		$staff_id = $this->Session->read("blesta_staff_id") ?? $this->Session->read("blesta_client_id");
-		$resp = $this->TicagaSettings->callAPI("responses/" . $ticket_id, $apiURL,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("responses/" . $ticket_id, $apiURL,$apiEmail,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		if ($resp_test)
 		{
@@ -603,9 +618,11 @@ class TicagaTickets extends TicagaSupportModel
     {
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
+
 		$ipaddress = $this->get_client_ip_server();
 		$staff_id = $this->Session->read("blesta_staff_id") ?? $this->Session->read("blesta_client_id");
-		$resp = $this->TicagaSettings->callAPI("tickets/user/" . $user_id, $apiURL,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("tickets/user/" . $user_id, $apiURL,$apiEmail,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		if ($resp_test)
 		{
@@ -625,9 +642,11 @@ class TicagaTickets extends TicagaSupportModel
     {
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
+
 		$ipaddress = $this->get_client_ip_server();
 		$staff_id = $this->Session->read("blesta_staff_id") ?? $this->Session->read("blesta_client_id");
-		$resp = $this->TicagaSettings->callAPI("tickets/userinfobyemail/" . $email_id, $apiURL,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("tickets/userinfobyemail/" . $email_id, $apiURL,$apiEmail,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		if ($resp_test)
 		{
@@ -647,8 +666,10 @@ class TicagaTickets extends TicagaSupportModel
     {
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
         $apiURL = $this->getAPIInfoByCompanyId()->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
+
         $ipaddress = $this->get_client_ip_server();
-        $resp = $this->TicagaSettings->callAPI("clients/" . $id, $apiURL,$apiKey);
+        $resp = $this->TicagaSettings->callAPI("clients/" . $id, $apiURL,$apiEmail,$apiKey);
         $resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
         if ($resp_test)
         {
@@ -691,18 +712,20 @@ class TicagaTickets extends TicagaSupportModel
     {
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
+
 		$ipaddress = $this->get_client_ip_server();
 		$staff_id = $this->Session->read("blesta_staff_id") ?? $this->Session->read("blesta_client_id");
 		if ($staff_id != null)
 		{
-            $dept_resp = $this->TicagaSettings->callAPI("departments", $apiURL,$apiKey);
-            $dept_resp_count = $this->TicagaSettings->callAPI("department/count", $apiURL,$apiKey);
+            $dept_resp = $this->TicagaSettings->callAPI("departments", $apiURL,$apiEmail,$apiKey);
+            $dept_resp_count = $this->TicagaSettings->callAPI("department/count", $apiURL,$apiEmail,$apiKey);
             $jsondec_dept_resp = json_decode($dept_resp['response']);
             
             if ($dept_resp_count['response'] > 0)
             {
                     
-                    $resp = $this->TicagaSettings->callAPI("tickets/grab_all/", $apiURL,$apiKey);
+                    $resp = $this->TicagaSettings->callAPI("tickets/grab_all/", $apiURL,$apiEmail,$apiKey);
                     $resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
                     echo var_dump($resp);
                     
@@ -725,8 +748,6 @@ class TicagaTickets extends TicagaSupportModel
      */
     public function doesUserExist()
     {
-        $apiKey = $this->getAPIInfoByCompanyId()->api_key;
-		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
 		$ipaddress = $this->get_client_ip_server();
 		$client_id = $this->Session->read("blesta_client_id") ?: 'false';
 
@@ -746,17 +767,19 @@ class TicagaTickets extends TicagaSupportModel
     {
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
+
 		$ipaddress = $this->get_client_ip_server();
 		if ($client_id == null)
 		{
 			return false;
 		} else {
-            $resp = $this->TicagaSettings->callAPI("tickets/user/" . $client_id, $apiURL,$apiKey);
+            $resp = $this->TicagaSettings->callAPI("tickets/user/" . $client_id, $apiURL,$apiEmail,$apiKey);
             $resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
             if ($resp_test)
             {
                 $jsondec = json_decode($resp['response']);
-                $dept_resp = $this->TicagaSettings->callAPI("departments/byid/" . $jsondec[0]->department_id, $apiURL,$apiKey);
+                $dept_resp = $this->TicagaSettings->callAPI("departments/byid/" . $jsondec[0]->department_id, $apiURL,$apiEmail,$apiKey);
                 $jsondec_dept_resp = json_decode($dept_resp['response']);
                 return $jsondec;
             } else {
@@ -772,6 +795,8 @@ class TicagaTickets extends TicagaSupportModel
     {
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
+
 		$ipaddress = $this->get_client_ip_server();
 		$clients_var = $this->Clients->get($client_id);
 		$client_email = $clients_var->email ?? false;
@@ -779,12 +804,12 @@ class TicagaTickets extends TicagaSupportModel
 		{
 			return false;
 		} else {
-		$resp = $this->TicagaSettings->callAPI("tickets/userticketsbyemail/" . $client_email, $apiURL,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("tickets/userticketsbyemail/" . $client_email, $apiURL,$apiEmail,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		if ($resp_test)
 		{
 		$jsondec = json_decode($resp['response']);
-		$dept_resp = $this->TicagaSettings->callAPI("departments/byid/" . $jsondec[0]->department_id, $apiURL,$apiKey);
+		$dept_resp = $this->TicagaSettings->callAPI("departments/byid/" . $jsondec[0]->department_id, $apiURL,$apiEmail,$apiKey);
 		$jsondec_dept_resp = json_decode($dept_resp['response']);
 		return $jsondec;
 		} else {
@@ -804,8 +829,9 @@ class TicagaTickets extends TicagaSupportModel
 		$company_id = Configure::get('Blesta.company_id');
         $apiKey = $this->getAPIInfoByCompanyId($company_id)->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId($company_id)->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
 		
-		$resp = $this->TicagaSettings->callAPI("departments/byid/" . $departmentid,$apiURL,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("departments/byid/" . $departmentid,$apiURL,$apiEmail,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		
 		if ($resp_test)
@@ -827,8 +853,9 @@ class TicagaTickets extends TicagaSupportModel
 		$company_id = Configure::get('Blesta.company_id');
         $apiKey = $this->getAPIInfoByCompanyId($company_id)->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId($company_id)->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
 		
-		$resp = $this->TicagaSettings->callAPI("departments/byid/" . $departmentid,$apiURL,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("departments/byid/" . $departmentid,$apiURL,$apiEmail,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		
 		if ($resp_test)
@@ -850,8 +877,9 @@ class TicagaTickets extends TicagaSupportModel
 		$company_id = Configure::get('Blesta.company_id');
         $apiKey = $this->getAPIInfoByCompanyId($company_id)->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId($company_id)->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
 		
-		$resp = $this->TicagaSettings->callAPI("departments/byid/" . $departmentid,$apiURL,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("departments/byid/" . $departmentid,$apiURL,$apiEmail,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		
 		if ($resp_test)
@@ -872,8 +900,9 @@ class TicagaTickets extends TicagaSupportModel
 		$company_id = Configure::get('Blesta.company_id');
         $apiKey = $this->getAPIInfoByCompanyId($company_id)->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId($company_id)->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
 		
-		$resp = $this->TicagaSettings->callAPI("departments",$apiURL,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("departments", $apiURL, $apiEmail, $apiEmail,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		
 		if ($resp_test)
@@ -894,8 +923,9 @@ class TicagaTickets extends TicagaSupportModel
 		$company_id = Configure::get('Blesta.company_id');
         $apiKey = $this->getAPIInfoByCompanyId($company_id)->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId($company_id)->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
 		
-		$resp = $this->TicagaSettings->callAPI("departments/1",$apiURL,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("departments/1",$apiURL,$apiEmail,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		
 		if ($resp_test)
@@ -916,8 +946,9 @@ class TicagaTickets extends TicagaSupportModel
 		$company_id = Configure::get('Blesta.company_id');
         $apiKey = $this->getAPIInfoByCompanyId($company_id)->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId($company_id)->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
 		
-		$resp = $this->TicagaSettings->callAPI("departments/2",$apiURL,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("departments/2",$apiURL,$apiEmail,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		
 		if ($resp_test)
@@ -1073,6 +1104,8 @@ class TicagaTickets extends TicagaSupportModel
         // Fetch the email addresses of all contacts set on the ticket replies
         $apiKey = $this->getAPIInfoByCompanyId()->api_key;
 		$apiURL = $this->getAPIInfoByCompanyId()->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
+
 		$department_id = $vars['department_id'];
 		$client_id = $vars['client_id'] ?? $vars['staff_id'];
 		$details = $vars["details"] ?? "";
@@ -1081,10 +1114,10 @@ class TicagaTickets extends TicagaSupportModel
 		$contact_emails_resp = [];
 		if ($vars['staff_id'] != null)
 		{		
-		$resp = $this->TicagaSettings->callAPI("responses/" . $ticket_id, $apiURL,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("responses/" . $ticket_id, $apiURL,$apiEmail,$apiKey);
 		$contact_emails_resp = json_decode($resp['response']);
 		} else {
-		$resp = $this->TicagaSettings->callAPI("responses/" . $ticket_id, $apiURL,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("responses/" . $ticket_id, $apiURL,$apiEmail,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		if ($resp_test)
 		{
@@ -1414,8 +1447,9 @@ class TicagaTickets extends TicagaSupportModel
         $company_id = Configure::get('Blesta.company_id');
         $apiKey = $this->getAPIInfoByCompanyIdProvided($company_id)->api_key;
 		$apiURL = $this->getAPIInfoByCompanyIdProvided($company_id)->api_url;
+		$apiEmail = $this->getAPIInfoByCompanyId()->api_email;
 		
-		$resp = $this->TicagaSettings->callAPI("tickets/" . $ticket_id,$apiURL,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("tickets/" . $ticket_id,$apiURL,$apiEmail,$apiKey);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 		if ($resp_test)
 		{
