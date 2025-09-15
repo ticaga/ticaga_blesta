@@ -6,7 +6,7 @@
 
 #### Completed versions:
 
-###### Version 2.0.0:
+##### Version 2.0.0:
 
 - You can now open tickets as a guest (Not logged in).
 - Departments with disabled priorities no longer show the dropdown. 
