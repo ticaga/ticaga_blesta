@@ -1,0 +1,103 @@
+<?php
+    // Don't show this container when only rendering the widget section
+    if (!(isset($render_section) ? $render_section : null)) {
+?>
+    <div class="col-md-12">
+    <?php
+    }
+    echo (isset($message) ? $message : null);
+		// Create widget
+		$this->Widget->clear();
+		$this->Widget->setStyleSheet($this->view_dir . "css/styles.css");
+		$this->WidgetClient->create($this->_('TicagaSupportPlugin.index.create_ticket', true));
+		$this->WidgetClient->startBody();
+		$this->Form->create(null, ['id'=>'create_ticket_ticaga', 'enctype' => 'multipart/form-data', 'class' => 'disable-on-submit']);
+	?>
+		<?php
+		if($client_id)
+		{
+			$this->Form->fieldHidden('client_id', $this->Html->ifSet($vars->client_id, 0));
+		} else {
+		?>
+		    <div class="form-group">
+				<?php
+					$this->Form->label($this->_('TicagaSupportPlugin.index.public_name', true), "public_name");
+					$this->Form->fieldText("public_name", null, ['id' => 'public_name', 'class' => 'form-control']);
+				?>
+			</div>
+			<div class="form-group">
+				<?php
+					$this->Form->label($this->_('TicagaSupportPlugin.index.email_address', true), "email");
+					$this->Form->fieldText("email", null, ['id' => 'email', 'class' => 'form-control']);
+				?>
+			</div>
+		<?php
+			}
+		?>
+		<div class="form-group">
+			<?php
+				$this->Form->label($this->_('TicagaSupportPlugin.index.subject', true), "summary");
+				$this->Form->fieldText("subject", null, ['id' => 'subject', 'class' => 'form-control']);
+			?>
+		</div>
+		<div class="form-group">
+			<?php
+				$this->Form->label($this->_('TicagaSupportPlugin.index.carbon_copy',true), "cc");
+				$this->Form->fieldText("cc", null, ['id' => 'cc', 'class' => 'form-control', 'placeholder' => $this->_('TicagaSupportPlugin.index.carbon_copy_placeholder', true)]);
+			?>
+		</div>
+		<div class="form-group">
+			<?php
+				if($allow_high_priority != '3'){
+
+					$this->Form->label($this->_('TicagaSupportPlugin.index.priority',true), "priority");
+					if ($is_highpriority_allowed == true) {
+						$priorities = ["low" => "Low", "medium" => "Medium",'high' => "High", 'critical' => 'Critical', 'emergency' => 'Emergency'];
+					} else {
+						$priorities = ["low" => "Low","medium" => "Medium"];	
+					}
+				
+					$this->Form->fieldSelect('priority', (isset($priorities) ? $priorities : null), null, ['id' => 'priority', 'class' => 'form-control']);
+				}
+            ?>
+		</div>
+		<div class="form-group">
+            <?php
+                $this->Form->label($this->_('TicagaSupportPlugin.index.ticket_response',true), 'message');
+				$this->Form->fieldTextarea('message', null, ['id' => 'message', 'rows' => 5, 'class' => 'form-control', 'data-markdown-editor' => '']);
+            ?>
+        </div>
+		<button type="submit" class="btn btn-light float-right">
+            <?php echo $this->_('TicagaSupportPlugin.index.submit', true);?>
+        </button>
+    <?php
+        $this->Form->end();
+        $this->WidgetClient->endBody();
+        $this->WidgetClient->end();
+	
+	// Don't show this container when only rendering the widget section
+	if (!(isset($render_section) ? $render_section : null)) {
+	?>
+	</div>
+	<?php
+	}
+	$this->Javascript->setInline("
+        $(document).ready(function() {
+            // Initialize dropzone
+            $(this).blestaBindDropZone();
+
+            // Format form
+            $('#create_ticket_ticaga').submit(function() {
+                // Submit unchecked checkboxes
+                $('#create_ticket_ticaga input[type=\"checkbox\"]:not(:checked)').each(function() {
+                    $(this).prop('disabled', true);
+                    $('<input>', {
+                        type: 'hidden',
+                        name: $(this).attr('name'),
+                        value: '0'
+                    }).appendTo($(this).parent());
+                });
+            });
+        });
+    ");
+?>

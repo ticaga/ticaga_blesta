@@ -1,0 +1,100 @@
+<?php
+    // Don't show this container when only rendering the widget section
+    if (!(isset($render_section) ? $render_section : null)) {
+?>
+    <div class="col-md-12">
+    <?php
+    }
+    	echo (isset($message) ? $message : null);
+		// Create widget
+		$this->Widget->clear();
+		$this->Widget->setStyleSheet($this->view_dir . "css/styles.css");
+        $ticket_title = $this->_('TicagaSupportPlugin.index.ticket', true) . ' #' . $this->Html->safe($ticket->id) . ' - ' . mb_strimwidth($this->Html->safe($ticket->subject), 0, 60, "...");
+		
+        $this->WidgetClient->create($ticket_title);
+        $this->WidgetClient->startBody();
+
+?>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="border rounded overflow-hidden flex-md-row h-md-250 position-relative">
+                <div class="col p-4 d-flex flex-column position-static">
+                    <strong class="d-inline-block mb-2 text-secondary">
+                        <?php echo $this->Html->safe($ticket->name ?: $ticket->public_name); ?> - <?php echo $this->Html->safe(date('jS F Y H:i',strtotime($ticket->ticket_created))); ?>
+                    </strong>
+                    <p class="card-text mb-auto">
+                        <?php echo nl2br($this->Html->safe($ticket->message)); ?>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-2">
+        <div class="col-md-12">
+            <div class="border rounded overflow-hidden flex-md-row h-md-250 position-relative">
+                <div class="col p-4 d-flex flex-column position-static">
+                    <strong class="d-inline-block mb-2 text-secondary">
+                        Submit a response 
+                    </strong>
+                    <?php
+                        $this->Form->create();
+                    ?>
+                    <div class="form-group">
+                        <?php
+                            $this->Form->fieldTextarea('response_content', null, ['id' => 'response_content', 'rows' => 5, 'class' => 'form-control', 'data-markdown-editor' => '']);
+                        ?>
+                    </div>
+                    <button type="submit" class="btn btn-light float-right">
+                        <?php echo $this->_('TicagaSupportPlugin.index.submit', true);?>
+                    </button>
+                    <?php
+                        $this->Form->end();
+                    ?>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <?php
+        if (isset($replies) && !empty($replies)) {
+            foreach ($replies as $reply) {
+                foreach ($reply as $response) {
+                    if($response['is_note'] != '1'){
+    ?>
+    <div class="row mt-2">
+        <div class="col-md-12">
+            <div class="border rounded overflow-hidden flex-md-row h-md-250 position-relative">
+                <div class="col p-4 d-flex flex-column position-static">
+                    <strong class="d-inline-block mb-2 text-secondary">
+                        <?php echo $this->Html->safe($response['user_name']); ?> <?php if($response['employee_response'] == '1'){ ?>
+                            <span class="badge badge-primary">Employee</span>
+                        <?php } else { ?>
+                            <span class="badge badge-warning">You</span>
+                        <?php } ?> 
+                        - <?php echo $this->Html->safe(date('jS F Y H:i',strtotime($response['created_at']))); ?>
+                    </strong>
+                    <p class="card-text mb-auto">
+                        <?php echo nl2br($this->Html->safe($response['content'])); ?>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php
+                    }
+                }
+            }
+        }
+    ?>
+    
+<?php
+    $this->WidgetClient->endBody();
+    $this->WidgetClient->end();
+?>
+
+</div>
+<?php
+    $this->WidgetClient->endBody();
+    $this->WidgetClient->end();
+?>
