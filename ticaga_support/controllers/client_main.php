@@ -23,9 +23,21 @@ class ClientMain extends TicagaSupportController
 		$this->uses(['Staff', 'Companies', 'TicagaSupport.TicagaTickets', 'TicagaSupport.TicagaSettings', 'Input', 'Record', 'Session', 'Clients']);
 
 		$this->client_id = $this->Session->read('blesta_client_id');
-		
+
 		$this->staff_id = $this->Session->read('blesta_staff_id');
-		
+
+		// Ensure a logged-in customer has a linked Ticaga account. linkClient() is
+		// idempotent (skips if already linked) and otherwise finds-or-creates the
+		// Ticaga customer via customers/link, so tickets are attributed to the
+		// correct Ticaga customer id and customer-only departments are available.
+		if ($this->client_id) {
+			try {
+				$this->TicagaTickets->linkClient($this->client_id);
+			} catch (Throwable $e) {
+				// Non-fatal: the guest flow remains as a fallback if linking can't complete
+			}
+		}
+
 		 // Fetch contact that is logged in, if any
         if (!isset($this->Contacts)) {
             $this->uses(['Contacts']);
@@ -54,14 +66,9 @@ class ClientMain extends TicagaSupportController
 
 		if ($userExists == '0')
 		{
-            if($client_id)
-            {
-                $this->flashMessage('error', "Please Sync your account with Ticaga.", null, false);
-                $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/sync/');
-            } else {
-                // Could implement a guest submitting ticket at the moment re-direct to departments page.
-                $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments');
-            }
+            // Guests and customers not yet linked to Ticaga are sent to the departments
+            // page, where they can open a ticket as a guest (no forced account sync).
+            $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments');
 		} else {
             // Get tickets for this user
 			$tickets = $this->TicagaTickets->getTicketsByUserID($userExists->ticaga_userid);
@@ -92,28 +99,30 @@ class ClientMain extends TicagaSupportController
 
 		$client_id = $this->client_id;
 		$userExists = $this->TicagaTickets->doesUserExist();
-		
-		if ($client_id != false)
-		{
-            if($userExists == '0')
-            {
-                $this->flashMessage('error', "Please Sync your account with Ticaga.", null, false);
-                $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/sync/');
-            }
+		$is_linked = ($client_id != false && $userExists != '0');
 
+		if ($is_linked)
+		{
+		    // Linked customer: show the departments available to their account
 		    $depts_clients = $this->TicagaTickets->getDepartmentsForClientsUseOnly();
-            
+
 			$this->set('depts', $depts_clients["departments"]);
 			$this->set('client_id', $client_id);
 		} else {
+		    // Guests and not-yet-linked customers: show public departments and let
+		    // them open a ticket as a guest.
 		    $depts_public = $this->TicagaTickets->getDepartmentsForPublicUseOnly();
 
 			$this->set('depts', $depts_public["departments"]);
 			$this->set('client_id', false);
 
-			return $this->view->setView('client_main_departments', 'default');
-			return $this->renderAjaxWidgetIfAsync(false);
+			// Logged-in but unlinked: warn that tickets won't be tied to their account yet
+			if ($client_id != false) {
+				$this->set('unlinked_notice', true);
+			}
 		}
+
+		return $this->view->setView('client_main_departments', 'default');
   	}
 	
 	/**
@@ -129,8 +138,9 @@ class ClientMain extends TicagaSupportController
 
         // Client ID of user currently logged in.
 		$client_id = $this->client_id ?: false;
-        // Does the user exist in the database?
+        // Is the customer linked to a Ticaga account?
 		$userExists = $this->TicagaTickets->doesUserExist();
+		$is_linked = ($client_id != false && $userExists != '0');
 
         // Check if department exists
 		$department_information = $this->TicagaTickets->getDepartmentsBySlug($this->get[0]) ?: '1';
@@ -145,129 +155,137 @@ class ClientMain extends TicagaSupportController
 
         // Check if department allows high priority tickets
 		$prioritystatuses = $this->TicagaTickets->getPrioritiesHighAllowed($this->get[0]);
-        
-		if ($department_array && $client_id == false && $department_array['is_disabled'] == 0)
+
+        // The department must exist and be enabled
+        if (!$department_array || $department_array['is_disabled'] != 0) {
+            $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments');
+        }
+
+		if ($is_linked)
 		{
-			if ($department_array['is_public'] == 1  && $department_array['is_disabled'] == 0)
-			{
-            
-                $this->set('department_slug', $this->get[0]);
-                $this->set('client_id', '0');
-                $this->set('department_name', $department_array["department_name"]);
-                $this->set('allow_high_priority', $department_array["allows_high_priority"]);
-                $this->set('is_highpriority_allowed', $prioritystatuses);
+            // ===== Linked customer: the ticket is tied to their Ticaga account =====
+            $this->set('department_slug', $this->get[0]);
+            $this->set('client_id', $client_id);
+            $this->set('department_name', $department_array["department_name"]);
+            $this->set('allow_high_priority', $department_array["allows_high_priority"]);
+            $this->set('is_highpriority_allowed', $prioritystatuses);
 
-                if (!empty($this->post)) {
-                    $dept_id = $this->get[0];
-                    $client_name = $this->post['public_name'];
-                    $priority = $this->post['priority'] ?? 'none';
-                    $message = $this->post['message'];
-                    $email = $this->post['email'];
-                    $cid = '0';
-                    $cc = $this->post['cc'];
-                    $ccid = [];
+            $client_var = $this->Record->select()->from("ticaga_billing")->where("ticaga_billing.billing_userid", "=", $client_id)->fetch();
+            $blesta_client = $this->Clients->get($client_id);
+            $client_name = $blesta_client->first_name . " " . $blesta_client->last_name;
+            $client_email = $client_var->email_address;
 
-                    if (gettype($cc) == "array")
-                    {
-                        if (count($cc) > 1)
-                        {
-                            $ccid = explode(",",$cc);
-                        } else {
-                            $ccid = [0 => $cc];
-                        }
-                    } elseif (gettype($cc) == "string") {
-                        $cctest = explode(",",$cc);
-                        if (count($cctest) > 1)
-                        {
-                            $ccid = explode(",",$cc);
-                        } else {
-                            $ccid = [0 => $cc];
-                        }
-                    } else {
-                            $ccid = [];
-                    }
-                 
-                    //  var_dump($this->post["subject"]); die;
-                    $submitarray = ["organize" => 'blesta', "department_slug" => $this->get[0], "client_id" => '0', "priority" => $priority, "subject" => $this->post["subject"], "message" => $message, "cc" => $ccid, 'client_email' => $email, 'public_name' => $client_name];
-                    $ticketsubmit = $this->TicagaTickets->add($submitarray);
-                    if ($ticketsubmit)
-                    {
-                        $this->flashMessage('message', "Success! Your ticket has been sent to our team.", null, false);
-                        // Might want to redirect to the ticket view page instead.
-                        $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');
-                    } else {
-                        $this->flashMessage('message', "Error: Sorry your ticket couldn't be submitted. Please try again", null, false);
-                        $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/open/' . $this->get[0]);
-                    }
+            if (!empty($this->post)) {
+                $message = $this->post['message'];
+                $email = $client_email;
+                $cid = $client_var->ticaga_userid ?: 0;
+                $ccid = $this->parseCarbonCopy($this->post['cc'] ?? '');
+
+                $submitarray = ["organize" => 'blesta', "department_slug" => $this->get[0], "client_id" => $cid, "priority" => $this->post['priority'], "subject" => $this->post["subject"], "message" => $message, "cc" => $ccid, 'client_email' => $email, 'public_name' => $client_name];
+                $ticketsubmit = $this->TicagaTickets->add($submitarray);
+
+                if ($ticketsubmit != false) {
+                    $this->flashMessage('message', "Success! Your ticket has been sent to our team.", null, false);
+                    $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');
+                } else {
+                    $this->flashMessage('error', "Failure Submitting Ticket", null, false);
+                    $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments');
                 }
-			} else {
-				$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments');
-			}
-		} else {
-            if ($department_array && $client_id != false && $department_array['is_disabled'] == 0)
-            {
-                $this->set('department_slug', $this->get[0]);
-                $this->set('client_id', $client_id);
-                $this->set('department_name', $department_array["department_name"]);
-                $this->set('allow_high_priority', $department_array["allows_high_priority"]);
-                $this->set('is_highpriority_allowed', $prioritystatuses);
-                    
-                $client_var = $this->Record->select()->from("ticaga_billing")->where("ticaga_billing.billing_userid", "=", $client_id)->fetch();
-                $client_name = $this->Clients->get($client_id)->first_name . " " . $this->Clients->get($client_id)->last_name;
-                $client_email = $client_var->email_address;
-
-                if (!empty($this->post)) {
-                    $dept_id = $this->get[0];
-                    $message = $this->post['message'];
-                    $email = $client_email;
-                    $cid = $client_var->ticaga_userid ?: 0;
-                    $cc = $this->post['cc'];
-                    $ccid = [];
-
-                    if (gettype($cc) == "array")
-                    {
-                        if (count($cc) > 1)
-                        {
-                            $ccid = explode(",",$cc);
-                        } else {
-                            $ccid = [0 => $cc];
-                        }
-                    } elseif (gettype($cc) == "string") {
-                        $cctest = explode(",",$cc);
-                        if (count($cctest) > 1)
-                        {
-                            $ccid = explode(",",$cc);
-                        } else {
-                            $ccid = [0 => $cc];
-                        }
-                    } else {
-                        $ccid = [];
-                    }
-                    $submitarray = ["organize" => 'blesta', "department_slug" => $this->get[0], "client_id" => $cid, "priority" => $this->post['priority'], "subject" => $this->post["subject"], "message" => $message, "cc" => $ccid, 'client_email' => $email, 'public_name' => $client_name];
-                    $ticketsubmit = $this->TicagaTickets->add($submitarray);
-
-                    if ($ticketsubmit != false)
-                    {
-                        $this->flashMessage('message', "Success! Your ticket has been sent to our team.", null, false);
-                        // Might want to redirect to the ticket view page instead.
-                        $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');
-                    } else {
-                        $this->flashMessage('error', "Failure Submitting Ticket", null, false);
-                        $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments');
-                    }
-                }
-
-                return $this->view->setView('client_main_submitticket', 'default');
-                return $this->renderAjaxWidgetIfAsync(false);
-
-            } else {
-                $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments');
             }
 
             return $this->view->setView('client_main_submitticket', 'default');
-            return $this->renderAjaxWidgetIfAsync(false);
+		}
+		else
+		{
+            // ===== Guest, or logged-in customer not yet linked: a public ticket =====
+            // Only public departments may be used for guest submissions
+            if ($department_array['is_public'] != 1) {
+                $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments');
+            }
+
+            // Pre-fill name/email from Blesta for a logged-in but unlinked customer
+            $prefill_name = '';
+            $prefill_email = '';
+            if ($client_id != false) {
+                $blesta_client = $this->Clients->get($client_id);
+                if ($blesta_client) {
+                    $prefill_name = trim($blesta_client->first_name . ' ' . $blesta_client->last_name);
+                    $prefill_email = $blesta_client->email;
+                }
+                $this->set('unlinked_notice', true);
+            }
+
+            $this->set('department_slug', $this->get[0]);
+            $this->set('client_id', '0');
+            $this->set('department_name', $department_array["department_name"]);
+            $this->set('allow_high_priority', $department_array["allows_high_priority"]);
+            $this->set('is_highpriority_allowed', $prioritystatuses);
+            $this->set('prefill_name', $prefill_name);
+            $this->set('prefill_email', $prefill_email);
+
+            if (!empty($this->post)) {
+                $priority = $this->post['priority'] ?? 'none';
+                $message = $this->post['message'];
+                $email = !empty($this->post['email']) ? $this->post['email'] : $prefill_email;
+                $client_name = !empty($this->post['public_name']) ? $this->post['public_name'] : $prefill_name;
+                $ccid = $this->parseCarbonCopy($this->post['cc'] ?? '');
+
+                $submitarray = ["organize" => 'blesta', "department_slug" => $this->get[0], "client_id" => '0', "priority" => $priority, "subject" => $this->post["subject"], "message" => $message, "cc" => $ccid, 'client_email' => $email, 'public_name' => $client_name];
+                $ticketsubmit = $this->TicagaTickets->add($submitarray);
+
+                if ($ticketsubmit) {
+                    $reference = $this->extractTicketReference($ticketsubmit);
+                    $success = "Success! Your ticket has been sent to our team.";
+                    if ($reference) {
+                        $success .= " Your reference is " . $reference . " — please keep it to track your ticket.";
+                    }
+                    $this->flashMessage('message', $success, null, false);
+                    $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');
+                } else {
+                    $this->flashMessage('error', "Sorry your ticket couldn't be submitted. Please try again.", null, false);
+                    $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/open/' . $this->get[0]);
+                }
+            }
+
+            return $this->view->setView('client_main_open', 'default');
 		}
   	}
+
+	/**
+	 * Normalises the carbon-copy field (string or array) into an array of values.
+	 *
+	 * @param string|array $cc The raw carbon-copy input
+	 * @return array A list of cc values
+	 */
+	private function parseCarbonCopy($cc)
+	{
+		if (is_array($cc)) {
+			return count($cc) > 1 ? array_values($cc) : [0 => reset($cc)];
+		}
+		if (is_string($cc) && trim($cc) !== '') {
+			return explode(',', $cc);
+		}
+		return [];
+	}
+
+	/**
+	 * Extracts a public reference (hash, falling back to id) from a ticket
+	 * creation response so a guest can track their ticket.
+	 *
+	 * @param mixed $ticketsubmit The decoded API response from TicagaTickets::add()
+	 * @return string|null The reference, or null if none could be determined
+	 */
+	private function extractTicketReference($ticketsubmit)
+	{
+		if (is_object($ticketsubmit) && isset($ticketsubmit->id)) {
+			$ticket = $ticketsubmit->id;
+			if (is_object($ticket)) {
+				return $ticket->public_hash ?? ($ticket->id ?? null);
+			}
+			return $ticket;
+		}
+		return null;
+	}
   
   	/**
      * Returns the view for showing syncing client account.

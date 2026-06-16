@@ -6,6 +6,16 @@
     <?php
     }
     echo (isset($message) ? $message : null);
+
+		if (isset($unlinked_notice) && $unlinked_notice) {
+		?>
+		<div class="alert alert-warning">
+			Your support account isn't linked to Ticaga yet, so this ticket is opened as a guest and won't appear in your account's ticket history until it's linked.
+			We'll keep the reference shown after you submit so you can track it.
+		</div>
+		<?php
+		}
+
 		// Create widget
 		$this->Widget->clear();
 		$this->Widget->setStyleSheet($this->view_dir . "css/styles.css");
@@ -22,13 +32,13 @@
 		    <div class="form-group">
 				<?php
 					$this->Form->label($this->_('TicagaSupportPlugin.index.public_name', true), "public_name");
-					$this->Form->fieldText("public_name", null, ['id' => 'public_name', 'class' => 'form-control']);
+					$this->Form->fieldText("public_name", (isset($prefill_name) ? $prefill_name : null), ['id' => 'public_name', 'class' => 'form-control']);
 				?>
 			</div>
 			<div class="form-group">
 				<?php
 					$this->Form->label($this->_('TicagaSupportPlugin.index.email_address', true), "email");
-					$this->Form->fieldText("email", null, ['id' => 'email', 'class' => 'form-control']);
+					$this->Form->fieldText("email", (isset($prefill_email) ? $prefill_email : null), ['id' => 'email', 'class' => 'form-control']);
 				?>
 			</div>
 		<?php

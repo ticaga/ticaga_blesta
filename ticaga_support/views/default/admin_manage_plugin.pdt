@@ -10,6 +10,20 @@
 ?>
 <div class="inner content">
 	<div class="pad">
+		<?php $cstatus = isset($connection_status) ? $connection_status : null; ?>
+		<p style="margin-bottom: 15px;">
+			<strong>Connection Status:</strong>
+			<?php if ($cstatus === null) { ?>
+				<span style="color: #999;">&#9679; Not configured</span>
+			<?php } elseif ($cstatus) { ?>
+				<span style="color: #3c763d; font-weight: bold;">&#10003; Connected</span>
+			<?php } else { ?>
+				<span style="color: #a94442; font-weight: bold;">&#10007; Not connected</span>
+				<?php if (!empty($connection_message)) { ?>
+					<br /><span style="color: #a94442;"><?php $this->Html->_($connection_message); ?></span>
+				<?php } ?>
+			<?php } ?>
+		</p>
 		<ul>
 			<li>
 				<?php
@@ -43,4 +57,28 @@
 <?php
 	$this->Form->end();
 	$this->Widget->end();
+
+	// Only offer account syncing once the API is connected
+	if (isset($connection_status) && $connection_status) {
+		$this->Widget->clear();
+		$this->Widget->create("Account Sync");
+		$this->Form->create();
+?>
+<div class="inner content">
+	<div class="pad">
+		<p>
+			Create and link Ticaga accounts for existing Blesta clients that aren't synced yet.
+			Clients whose email already exists in Ticaga are linked rather than duplicated.
+			Large client lists are processed in batches &mdash; the cron task completes any remainder automatically.
+		</p>
+		<?php $this->Form->fieldHidden("type", "sync_accounts"); ?>
+	</div>
+	<div class="button_row">
+		<a class="btn btn-primary pull-right submit" href="#">Sync existing accounts</a>
+	</div>
+</div>
+<?php
+		$this->Form->end();
+		$this->Widget->end();
+	}
 ?>

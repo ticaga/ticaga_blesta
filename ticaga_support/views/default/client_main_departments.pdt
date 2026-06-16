@@ -7,6 +7,15 @@
             }
             echo (isset($message) ? $message : null);
 
+            if (isset($unlinked_notice) && $unlinked_notice) {
+            ?>
+            <div class="alert alert-warning">
+                Your support account isn't linked to Ticaga yet, so any ticket you open here is created as a guest and won't appear in your account's ticket history until it's linked.
+                Your account will be linked automatically shortly, or you can <a href="<?php echo $this->Html->safe($this->base_uri . 'plugin/ticaga_support/client_main/sync/');?>">link it now</a>.
+            </div>
+            <?php
+            }
+
             $this->WidgetClient->clear();
             $this->WidgetClient->setStyleSheet($this->view_dir . 'css/styles.css', ['id' => 'ticaga_support_styles']);
             $this->WidgetClient->create($this->_('ClientTickets.index.boxtitle_tickets', true), ['id'=>'client_tickets'], (isset($render_section) ? $render_section : null));

@@ -75,28 +75,26 @@ class TicagaTickets extends TicagaSupportModel
      */
     public function add(array $vars, $require_email = false)
     {
-        $company_id = Configure::get('Blesta.company_id');
-        $apiKey = $this->getAPIInfoByCompanyId($company_id)->api_key;
-		$apiURL = $this->getAPIInfoByCompanyId($company_id)->api_url;
-		$apiEmail = $this->getAPIInfoByCompanyId($company_id)->api_email;
-        
+        $api = $this->getAPIInfoByCompanyId();
 
-        // Required fields
-		$client_id = $vars['client_id'] ?? '0'; // Ticaga ID
+        // Required fields. The tickets/create endpoint reads 'customer_id' (the
+        // Ticaga user id; '0' for a public/guest ticket).
+		$client_id = $vars['client_id'] ?? '0';
 		$cc = $vars["cc"] ?? "null";
-	
+		$ip_address = $_SERVER['REMOTE_ADDR'] ?? '';
+
 		if ($cc != "null")
 		{
             $ccid = implode(",", $cc);
-            $callvars = array('organize' => 'blesta', 'user_id' => $client_id, "subject" => $vars['subject'], "priority" => $vars['priority'], "message" => $vars["message"], "cc" => $ccid, "assigned" => "0", "department_slug" => $vars['department_slug'], "ip_address" => $_SERVER['REMOTE_ADDR'], 'public_email' => $vars["client_email"], 'public_name' => $vars["public_name"]);
+            $callvars = array('organize' => 'blesta', 'customer_id' => $client_id, "subject" => $vars['subject'], "priority" => $vars['priority'], "message" => $vars["message"], "cc" => $ccid, "assigned" => "0", "department_slug" => $vars['department_slug'], "ip_address" => $ip_address, 'public_email' => $vars["client_email"], 'public_name' => $vars["public_name"]);
 		} else {
-		    $callvars = array('organize' => 'blesta', 'user_id' => $client_id, "subject" => $vars['subject'], "priority" => $vars['priority'], "message" => $vars["message"], "assigned" => "0", "department_slug" => $vars['department_slug'], "ip_address" => $_SERVER['REMOTE_ADDR'], 'public_email' => $vars["client_email"], 'public_name' => null);
+		    $callvars = array('organize' => 'blesta', 'customer_id' => $client_id, "subject" => $vars['subject'], "priority" => $vars['priority'], "message" => $vars["message"], "assigned" => "0", "department_slug" => $vars['department_slug'], "ip_address" => $ip_address, 'public_email' => $vars["client_email"], 'public_name' => null);
 		}
-		
-		$resp = $this->TicagaSettings->callAPIPost("tickets/create", $callvars, $apiURL, $apiEmail, $apiKey);
+
+		$resp = $this->TicagaSettings->callAPIPost("tickets/create", $callvars, $api->api_url, $api->api_email, $api->api_key);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
 
-        if ($resp)
+        if ($resp_test)
 		{
 		    return json_decode($resp['response']);
 		} else {
@@ -260,7 +258,7 @@ class TicagaTickets extends TicagaSupportModel
      * @param bool $new_ticket True if this reply is apart of ticket being created, false otherwise (default false)
      * @return int The ID of the ticket reply on success, void on error
      */
-    public function addReply($ticket_id, array $vars, array $files = null)
+    public function addReply($ticket_id, array $vars, ?array $files = null)
     {
         $company_id = Configure::get('Blesta.company_id');
         $apiKey = $this->getAPIInfoByCompanyId($company_id)->api_key;
@@ -332,43 +330,29 @@ class TicagaTickets extends TicagaSupportModel
      * @param int $staff_id The ID of the staff member assigned to the tickets or associated departments (optional)
      * @return mixed An stdClass object representing the ticket, or false if none exist
      */
-    public function get($ticket_id, $get_replies = true, array $reply_types = null, $staff_id = null)
+    public function get($ticket_id, $get_replies = true, ?array $reply_types = null, $staff_id = null)
     {
-        $company_id = Configure::get('Blesta.company_id');
-        $apiKey = $this->getAPIInfoByCompanyId($company_id)->api_key;
-		$apiURL = $this->getAPIInfoByCompanyId($company_id)->api_url;
-		$apiEmail = $this->getAPIInfoByCompanyId($company_id)->api_email;
+		$api = $this->getAPIInfoByCompanyId();
 
-		$ipaddress = $this->get_client_ip_server();
-		$client_id = $this->Session->read("blesta_client_id");
-        $ticaga_id = $this->Record->select('ticaga_userid')->from("ticaga_billing")->where('billing_userid', '=', $client_id)->fetch()->ticaga_userid ?? '0';
+		$client_id = $this->Session->read('blesta_client_id');
+        $ticaga_id = $this->Record->select('ticaga_userid')->from('ticaga_billing')->where('billing_userid', '=', $client_id)->fetch()->ticaga_userid ?? '0';
 
-        $callvars = array('ticket_id' => $ticket_id, "client_id" => $ticaga_id);
-        $resp = $this->TicagaSettings->callAPIPost("tickets/get", $callvars, $apiURL, $apiEmail, $apiKey);
-        $replies = $this->getReplies($ticket_id);
-        return $replies;
-		//$replies_array = $this->getRepliesAsArray($ticket_id);
-		$replies_info_array = [];
-        return $resp;
-		if ($resp)
-		{
-		    $ticket_info = json_decode($resp['response']);
-            if ($replies)
-            {
-              foreach ($replies as $reply)
-              {
-                $userinfo_reply = $this->getUserInfo($reply->response_user_id)[0];
-                $a_array = array("name" => $userinfo_reply->name);
-                $replies_info_array[$reply->id] = $a_array;
-                array_merge($replies_info_array[$reply->id],$replies_array);
-              }
-		    }
+        // tickets/get expects the Ticaga user id ('id') and the 'ticket_id'
+        $callvars = array('id' => $ticaga_id, 'ticket_id' => $ticket_id);
+        $resp = $this->TicagaSettings->callAPIPost('tickets/get', $callvars, $api->api_url, $api->api_email, $api->api_key);
 
-		    $deptinfo = $this->getDepartmentsByID($ticket_info->tickets->department_id);
-		    return array("ticket" => $ticket_info->tickets, "replies" => $replies_array, "dept_info" => $deptinfo);
-		} else {
-		    return false;
+		if (($resp['status'] ?? '') !== 'success') {
+			return false;
 		}
+
+		$ticket_info = json_decode($resp['response']);
+		$result = array('ticket' => $ticket_info->tickets ?? null);
+
+		if ($get_replies) {
+			$result['replies'] = $this->getReplies($ticket_id);
+		}
+
+		return $result;
     }
 
     /**
@@ -526,15 +510,12 @@ class TicagaTickets extends TicagaSupportModel
      */
     public function getReplies($ticket_id)
     {
-        $company_id = Configure::get('Blesta.company_id');
-        $apiKey = $this->getAPIInfoByCompanyId($company_id)->api_key;
-		$apiURL = $this->getAPIInfoByCompanyId($company_id)->api_url;
-		$apiEmail = $this->getAPIInfoByCompanyId($company_id)->api_email;
+		$api = $this->getAPIInfoByCompanyId();
 
         $callvars = array('ticket_id' => $ticket_id);
-        $resp = $this->TicagaSettings->callAPIPost("responses/get", $callvars, $apiURL,$apiEmail,$apiKey);
-    
-        if ($resp)
+        $resp = $this->TicagaSettings->callAPIPost("responses/get", $callvars, $api->api_url, $api->api_email, $api->api_key);
+
+        if (($resp['status'] ?? '') === 'success')
         {
             return $resp["response"];
         } else {
@@ -550,22 +531,16 @@ class TicagaTickets extends TicagaSupportModel
      */
     private function getRepliesAsArray($ticket_id)
     {
-        $company_id = Configure::get('Blesta.company_id');
-        $apiKey = $this->getAPIInfoByCompanyId($company_id)->api_key;
-		$apiURL = $this->getAPIInfoByCompanyId($company_id)->api_url;
-		$apiEmail = $this->getAPIInfoByCompanyId($company_id)->api_email;
+		$api = $this->getAPIInfoByCompanyId();
 
-		$ipaddress = $this->get_client_ip_server();
-		$staff_id = $this->Session->read("blesta_staff_id") ?? $this->Session->read("blesta_client_id");
         $callvars = array('ticket_id' => $ticket_id);
-		$resp = $this->TicagaSettings->callAPIPost("responses/get", $callvars, $apiURL,$apiEmail,$apiKey);
-        return $resp['response'];
-		if ($resp)
-		{
-		    return json_decode($resp['response'],true);
-		} else {
-		    return false;
+		$resp = $this->TicagaSettings->callAPIPost("responses/get", $callvars, $api->api_url, $api->api_email, $api->api_key);
+
+		if (($resp['status'] ?? '') !== 'success') {
+			return false;
 		}
+
+		return json_decode($resp['response'], true);
     }
 	
 	/**
@@ -655,6 +630,140 @@ class TicagaTickets extends TicagaSupportModel
     }
 
     /**
+     * Idempotently links a single Blesta client to a Ticaga customer.
+     *
+     * Uses the customers/link endpoint, which finds the Ticaga user by email
+     * (creating one if none exists) and sets the billing link. Skips clients
+     * that are already linked. Safe to call repeatedly.
+     *
+     * @param int $client_id The Blesta client ID
+     * @return array ['status' => 'linked'|'skipped'|'no_api'|'invalid'|'failed', 'ticaga_userid' => int]
+     */
+    public function linkClient($client_id)
+    {
+        if (empty($client_id)) {
+            return ['status' => 'invalid'];
+        }
+
+        // Idempotency: already linked?
+        $existing = $this->Record->select()->from('ticaga_billing')
+            ->where('billing_userid', '=', $client_id)->fetch();
+        if ($existing) {
+            return ['status' => 'skipped'];
+        }
+
+        $api = $this->getAPIInfoByCompanyId();
+        if (!$api || empty($api->api_url) || empty($api->api_key)) {
+            return ['status' => 'no_api'];
+        }
+
+        $client = $this->Clients->get($client_id, false);
+        if (!$client || empty($client->email)) {
+            return ['status' => 'invalid'];
+        }
+
+        $name = trim(($client->first_name ?? '') . ' ' . ($client->last_name ?? ''));
+        if ($name === '') {
+            $name = $client->email;
+        }
+
+        $resp = $this->TicagaSettings->callAPIPost('customers/link', [
+            'email' => $client->email,
+            'name' => $name,
+            'billing_id' => $client_id,
+            'billing_system' => 'Blesta'
+        ], $api->api_url, $api->api_email, $api->api_key);
+
+        $body = isset($resp['response']) ? json_decode($resp['response'], true) : null;
+        $ticaga_user_id = $body['user']['id'] ?? null;
+        if (empty($ticaga_user_id)) {
+            return ['status' => 'failed'];
+        }
+
+        $this->Record->insert('ticaga_billing', [
+            'ticaga_userid' => $ticaga_user_id,
+            'billing_userid' => $client_id,
+            'email_address' => $client->email,
+            'billing_system' => 'Blesta',
+            'company_id' => Configure::get('Blesta.company_id')
+        ]);
+
+        return ['status' => 'linked', 'ticaga_userid' => $ticaga_user_id];
+    }
+
+    /**
+     * Returns the IDs of active Blesta clients in the current company that are
+     * not yet linked to a Ticaga account.
+     *
+     * @return array A numerically indexed list of Blesta client IDs
+     */
+    public function getUnlinkedClientIds()
+    {
+        $company_id = Configure::get('Blesta.company_id');
+
+        $clients = $this->Record->select(['clients.id'])
+            ->from('clients')
+            ->innerJoin('client_groups', 'client_groups.id', '=', 'clients.client_group_id', false)
+            ->where('client_groups.company_id', '=', $company_id)
+            ->where('clients.status', '=', 'active')
+            ->fetchAll();
+
+        $linked = $this->Record->select(['billing_userid'])
+            ->from('ticaga_billing')
+            ->where('company_id', '=', $company_id)
+            ->fetchAll();
+
+        $linked_ids = [];
+        foreach ($linked as $row) {
+            $linked_ids[$row->billing_userid] = true;
+        }
+
+        $unlinked = [];
+        foreach ($clients as $client) {
+            if (!isset($linked_ids[$client->id])) {
+                $unlinked[] = $client->id;
+            }
+        }
+
+        return $unlinked;
+    }
+
+    /**
+     * Backfills Ticaga accounts for existing, unlinked Blesta clients.
+     *
+     * @param int|null $limit Maximum number of clients to process this run
+     *  (null to process all; use a limit for cron batching to avoid timeouts)
+     * @return array Tallies: ['linked', 'failed', 'processed', 'remaining']
+     */
+    public function syncClients($limit = null)
+    {
+        $results = ['linked' => 0, 'failed' => 0, 'processed' => 0, 'remaining' => 0];
+
+        $unlinked = $this->getUnlinkedClientIds();
+        $total_unlinked = count($unlinked);
+
+        $batch = ($limit !== null) ? array_slice($unlinked, 0, (int) $limit) : $unlinked;
+
+        foreach ($batch as $client_id) {
+            $res = $this->linkClient($client_id);
+            $results['processed']++;
+
+            if ($res['status'] === 'linked') {
+                $results['linked']++;
+            } elseif (in_array($res['status'], ['failed', 'no_api'], true)) {
+                $results['failed']++;
+                // Stop early if the API is unreachable/misconfigured
+                if ($res['status'] === 'no_api') {
+                    break;
+                }
+            }
+        }
+
+        $results['remaining'] = max(0, $total_unlinked - $results['linked']);
+        return $results;
+    }
+
+    /**
      * Returns a Array object for fetching tickets
      *
      * @param array $filters A list of parameters to filter by, including:
@@ -729,30 +838,20 @@ class TicagaTickets extends TicagaSupportModel
      */
     public function getTicketsByUserID($client_id)
     {
-        $company_id = Configure::get('Blesta.company_id');
-        $apiKey = $this->getAPIInfoByCompanyId($company_id)->api_key;
-		$apiURL = $this->getAPIInfoByCompanyId($company_id)->api_url;
-		$apiEmail = $this->getAPIInfoByCompanyId($company_id)->api_email;
-		$ipaddress = $this->get_client_ip_server();
+		if (!$client_id) {
+			return false;
+		}
 
-		if ($client_id)
-		{
-			$resp = $this->TicagaSettings->callAPI("tickets/get/all/" . $client_id, $apiURL,$apiEmail,$apiKey);
-            $resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
-            return $resp;
-            if ($resp["response"] != '[]')
-            {
-                $jsondec = json_decode($resp['response']);
+		$api = $this->getAPIInfoByCompanyId();
 
-                $dept_resp = $this->TicagaSettings->callAPI("departments/get_by_id/" . $jsondec[0]->department_id, $apiURL,$apiEmail,$apiKey);
-                $jsondec_dept_resp = json_decode($dept_resp['response']);
-                return $jsondec;
-            } else {
-                return false;
-            }
-		} else {
-            return false;
-	  }
+		// Returns the raw API response array (['response' => ..., 'status' => ...]);
+		// the caller json_decodes ['response'] into the ticket list.
+		return $this->TicagaSettings->callAPI(
+			'tickets/get/all/' . $client_id,
+			$api->api_url,
+			$api->api_email,
+			$api->api_key
+		);
     }
 	
 	/**
@@ -841,16 +940,13 @@ class TicagaTickets extends TicagaSupportModel
      */
     public function getDepartmentsAll()
     {
-		$company_id = Configure::get('Blesta.company_id');
-        $apiKey = $this->getAPIInfoByCompanyId($company_id)->api_key;
-		$apiURL = $this->getAPIInfoByCompanyId($company_id)->api_url;
-		$apiEmail = $this->getAPIInfoByCompanyId($company_id)->api_email;
-		
+		$api = $this->getAPIInfoByCompanyId();
+
         $type = 'customers';
 
-		$resp = $this->TicagaSettings->callAPI("departments/". $type, $apiURL, $apiEmail, $apiEmail,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("departments/" . $type, $api->api_url, $api->api_email, $api->api_key);
 		$resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
-		
+
 		if ($resp_test)
 		{
 		return json_decode($resp['response'],true);

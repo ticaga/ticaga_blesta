@@ -124,9 +124,42 @@ class TicagaSettings extends TicagaSupportModel
 			return false;
 		}
 	}
+
+	/**
+	* Verifies the supplied API credentials by making a real authenticated
+	* request to the Ticaga API. Uses customers/get/0, which resolves to the
+	* token owner's own record, so it succeeds for any valid token (no special
+	* role or data required) and returns 401/403 for invalid credentials.
+	*
+	* @param string $apiURL   The base API URL
+	* @param string $apiEmail The stored API email (not used for auth)
+	* @param string $apiKey   The Sanctum API token
+	* @return array ['success' => bool, 'message' => string]
+	*/
+	public function testConnection($apiURL, $apiEmail, $apiKey)
+	{
+		$resp = $this->callAPI('customers/get/0', $apiURL, $apiEmail, $apiKey);
+
+		switch ($resp['status'] ?? '') {
+			case 'success':
+			case 'notfound':
+				// Reachable and authenticated.
+				return ['success' => true, 'message' => ''];
+			case 'autherror':
+				return ['success' => false, 'message' => 'Authentication failed. Check the API key is correct and belongs to a staff account.'];
+			case 'noresponse':
+				return ['success' => false, 'message' => 'Could not reach the API URL. Check the URL is correct and the server is reachable.'];
+			default:
+				return ['success' => false, 'message' => 'Unexpected response from the Ticaga API.'];
+		}
+	}
 	
 	/**
 	* Calls the API to do requested Actions(Get Request)
+	*
+	* The Ticaga API (v2/v3) authenticates with a Laravel Sanctum personal access
+	* token supplied as a Bearer token. $apiEmail is retained for backwards
+	* compatibility with the stored credentials but is not used for auth.
 	*/
 	public function callAPI($action,$apiURL,$apiEmail,$apiKey)
 	{
@@ -136,18 +169,18 @@ class TicagaSettings extends TicagaSupportModel
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
         $headers = array(
-            'Content-Type:application/json',
-            'Authorization: Basic '. base64_encode($apiEmail . ':'. $apiKey)
+            'Accept: application/json',
+            'Authorization: Bearer '. $apiKey
         );
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-		
+
 		$result = curl_exec($ch);
-		if (curl_errno($ch)) {
-		echo 'Error:' . curl_error($ch);
-		}
+		$curl_error = curl_errno($ch) ? curl_error($ch) : null;
 		$httprespcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		curl_close ($ch);
-	if ($result == null)
+	if ($curl_error !== null) {
+	return array("response" => null, "status" => "noresponse", "error" => $curl_error);
+	} else if ($result == null)
 	{
 	return array("response" => $result, "status" => "noresponse");
 	} else if ($httprespcode == 403 || $httprespcode == 401) {
@@ -161,31 +194,40 @@ class TicagaSettings extends TicagaSupportModel
 	
     /**
 	* Calls the API to do requested Actions(POST Request)
+	*
+	* Sends a JSON body to match the Content-Type header (the Ticaga API reads
+	* request input via Laravel, which decodes JSON when the header says so) and
+	* authenticates with the Sanctum Bearer token. $apiEmail is unused for auth.
 	*/
 	public function callAPIPost($action,$params,$apiURL,$apiEmail,$apiKey)
 	{
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $apiURL . "/api/" . $action);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
 		curl_setopt($ch, CURLOPT_POST, 1);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($params));
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
 		$headers = array(
-            'Content-Type:application/json',
-            'Authorization: Basic '. base64_encode($apiEmail . ':'. $apiKey)
+            'Content-Type: application/json',
+            'Accept: application/json',
+            'Authorization: Bearer '. $apiKey
         );
+		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
 		$result = curl_exec($ch);
-		if (curl_errno($ch)) {
-		echo 'Error:' . curl_error($ch);
-		}
+		$curl_error = curl_errno($ch) ? curl_error($ch) : null;
 		$httprespcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		curl_close ($ch);
-	if ($result == null)
+	if ($curl_error !== null) {
+	return array("response" => null, "status" => "noresponse", "error" => $curl_error);
+	} else if ($result == null)
 	{
 	return array("response" => $result, "status" => "noresponse");
 	} else if ($httprespcode == 403 || $httprespcode == 401) {
 	return array("response" => $result, "status" => "autherror");
+	} else if ($httprespcode == 404) {
+	return array("response" => $result, "status" => "notfound");
 	} else {
 	return array("response" => $result, "status" => "success");
 	}

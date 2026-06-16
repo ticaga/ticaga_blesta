@@ -120,6 +120,14 @@ class TicagaSupportPlugin extends Plugin
             $this->Input->setErrors(['db' => ['create' => $e->getMessage()]]);
             return;
         }
+
+        // Register the account-sync cron task (separate from table creation so a
+        // cron API hiccup can't roll back the install)
+        try {
+            $this->addCronTasks();
+        } catch (Throwable $e) {
+            // Non-fatal: the plugin still installs without the scheduled sync
+        }
     }
 
     /**
@@ -131,6 +139,13 @@ class TicagaSupportPlugin extends Plugin
      */
     public function uninstall($plugin_id, $last_instance)
     {
+        // Remove this company's cron task run (and the task definition on the last instance)
+        try {
+            $this->removeCronTasks($last_instance);
+        } catch (Throwable $e) {
+            // Non-fatal
+        }
+
         if ($last_instance) {
             try {
                 // Remove database tables
@@ -144,7 +159,7 @@ class TicagaSupportPlugin extends Plugin
             }
         }
     }
-	
+
 	/**
      * Perform the upgrade logic of the plugin.
      *
@@ -153,10 +168,90 @@ class TicagaSupportPlugin extends Plugin
      */
     public function upgrade($current_version, $plugin_id)
     {
-        // Upgrade if possible
-        if (version_compare($this->getVersion(), $current_version, '>')) {
-         return true;
-		}
+        // Ensure the account-sync cron task is registered for installs upgrading
+        // from a version before it existed (idempotent)
+        try {
+            $this->addCronTasks();
+        } catch (Throwable $e) {
+            // Non-fatal
+        }
+    }
+
+    /**
+     * Registers the account-sync cron task (idempotent: safe on install and upgrade).
+     */
+    private function addCronTasks()
+    {
+        Loader::loadModels($this, ['CronTasks']);
+
+        $key = 'ticaga_account_sync';
+        $dir = 'ticaga_support';
+
+        // Register the (global) task definition if not already present
+        $task = $this->CronTasks->getByKey($key, $dir, 'plugin');
+        $task_id = $task ? $task->id : $this->CronTasks->add([
+            'key' => $key,
+            'task_type' => 'plugin',
+            'dir' => $dir,
+            'name' => 'Ticaga Account Sync',
+            'description' => 'Creates and links Ticaga accounts for Blesta clients that are not yet synced.',
+            'is_lang' => 0,
+            'type' => 'interval'
+        ]);
+
+        // Register a per-company task run if one doesn't already exist
+        if ($task_id) {
+            $task_run = $this->CronTasks->getTaskRunByKey($key, $dir, false, 'plugin');
+            if (!$task_run) {
+                $this->CronTasks->addTaskRun($task_id, [
+                    'interval' => 15,
+                    'enabled' => 1
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Removes the account-sync cron task run, and the task definition on last uninstall.
+     *
+     * @param bool $last_instance True if this is the last instance of the plugin
+     */
+    private function removeCronTasks($last_instance)
+    {
+        Loader::loadModels($this, ['CronTasks']);
+
+        $key = 'ticaga_account_sync';
+        $dir = 'ticaga_support';
+
+        $task_run = $this->CronTasks->getTaskRunByKey($key, $dir, false, 'plugin');
+        if ($task_run) {
+            $this->CronTasks->deleteTaskRun($task_run->task_run_id);
+        }
+
+        if ($last_instance) {
+            $task = $this->CronTasks->getByKey($key, $dir, 'plugin');
+            if ($task) {
+                $this->CronTasks->deleteTask($task->id, 'plugin', $dir);
+            }
+        }
+    }
+
+    /**
+     * Runs a registered cron task.
+     *
+     * @param string $key The key of the cron task being run
+     */
+    public function cron($key)
+    {
+        if ($key === 'ticaga_account_sync') {
+            try {
+                Loader::loadModels($this, ['TicagaSupport.TicagaTickets']);
+                // Process a bounded batch per run so cron execution stays fast
+                $this->TicagaTickets->syncClients(100);
+            } catch (Throwable $e) {
+                // Swallow transient API errors so the run isn't marked failed
+            }
+        }
     }
 
     /**
@@ -262,6 +357,100 @@ class TicagaSupportPlugin extends Plugin
     {
     }
 
+    /**
+     * Returns all events to register observers for (invoked after install() or upgrade(),
+     * overwrites all existing event handlers)
+     *
+     * @return array A numerically indexed array containing:
+     *  - event The event to register for
+     *  - callback A callable to be invoked when the event fires
+     */
+    public function getEvents()
+    {
+        return [
+            // Fired whenever a Blesta client record is created (including self-registration)
+            [
+                'event' => 'Clients.add',
+                'callback' => ['this', 'createTicagaAccount']
+            ],
+            // Fired whenever a user logs in — link clients on login so Ticaga staff can
+            // see the customer (and their services, via the billing link) straight away
+            [
+                'event' => 'Users.login',
+                'callback' => ['this', 'linkClientOnLogin']
+            ]
+        ];
+    }
+
+    /**
+     * Event handler: creates a Ticaga account for a newly registered Blesta client
+     * and links the two together. Idempotent and failure-isolated so it can never
+     * interrupt the Blesta registration it observes.
+     *
+     * @param EventInterface $event The event instance, whose params include the new client_id
+     */
+    public function createTicagaAccount($event)
+    {
+        try {
+            $params = is_object($event) && method_exists($event, 'getParams') ? $event->getParams() : [];
+            $client_id = $params['client_id'] ?? ($params['id'] ?? null);
+
+            if (empty($client_id)) {
+                return;
+            }
+
+            // Delegate to the shared, idempotent link routine (find-or-create by email).
+            Loader::loadModels($this, ['TicagaSupport.TicagaTickets']);
+            $this->TicagaTickets->linkClient($client_id);
+        } catch (Throwable $e) {
+            // Never allow a Ticaga-side failure to interrupt Blesta client registration
+            return;
+        }
+    }
+
+    /**
+     * Event handler: links a Blesta client to a Ticaga account when they log in,
+     * so Ticaga staff can see the customer (and their services, via the billing
+     * link) immediately. Idempotent and failure-isolated; no-ops for staff logins.
+     *
+     * @param EventInterface $event The Users.login event, whose params identify the user
+     */
+    public function linkClientOnLogin($event)
+    {
+        try {
+            $params = is_object($event) && method_exists($event, 'getParams') ? $event->getParams() : [];
+
+            // Resolve the id of the user that logged in (key varies by Blesta version)
+            $user_id = null;
+            if (!empty($params['user_id'])) {
+                $user_id = $params['user_id'];
+            } elseif (!empty($params['id'])) {
+                $user_id = $params['id'];
+            } elseif (isset($params['user']) && is_object($params['user']) && isset($params['user']->id)) {
+                $user_id = $params['user']->id;
+            }
+
+            if (empty($user_id)) {
+                return;
+            }
+
+            // Only client logins map to a Blesta client; staff logins won't match
+            $client = $this->Record->select(['clients.id'])
+                ->from('clients')
+                ->where('clients.user_id', '=', $user_id)
+                ->fetch();
+            if (!$client) {
+                return;
+            }
+
+            Loader::loadModels($this, ['TicagaSupport.TicagaTickets']);
+            $this->TicagaTickets->linkClient($client->id);
+        } catch (Throwable $e) {
+            // Never allow a Ticaga-side failure to interrupt the login
+            return;
+        }
+    }
+
 	public function getAPIInfoByCompanyIdProvided(){
         $this->uses(['Record']);
         return $this->Record->select()->from("ticaga_settings")->where("ticaga_settings.company_id", "=", Configure::get('Blesta.company_id'))->fetch();
@@ -275,18 +464,36 @@ class TicagaSupportPlugin extends Plugin
      */
     private function getTicketsCountByClientID($clientid)
     {
-		$company_id = Configure::get('Blesta.company_id');
-        $apiKey = $this->getAPIInfoByCompanyIdProvided($company_id)->api_key;
-		$apiEmail = $this->getAPIInfoByCompanyIdProvided($company_id)->api_email;
-		$apiURL = $this->getAPIInfoByCompanyIdProvided($company_id)->api_url;
-		
-		$resp = $this->TicagaSettings->callAPI("tickets/user/" . $clientid,$apiURL, $apiEmail,$apiKey);
-		
-		$totalcountjson = json_decode($resp,true);
-		
-		$totalcount = count($totalcountjson);
-		
-        return $totalcount ?? 0;
+		// The card callback receives the Blesta client ID; resolve the linked
+		// Ticaga user ID before querying the Ticaga API.
+		$billing = $this->Record->select('ticaga_userid')
+			->from('ticaga_billing')
+			->where('billing_userid', '=', $clientid)
+			->fetch();
+
+		if (!$billing || empty($billing->ticaga_userid)) {
+			return 0;
+		}
+
+		$api = $this->getAPIInfoByCompanyIdProvided();
+		if (!$api) {
+			return 0;
+		}
+
+		$resp = $this->TicagaSettings->callAPI(
+			'tickets/get/all/' . $billing->ticaga_userid,
+			$api->api_url,
+			$api->api_email,
+			$api->api_key
+		);
+
+		if (($resp['status'] ?? '') !== 'success') {
+			return 0;
+		}
+
+		$tickets = json_decode($resp['response'], true);
+
+        return is_array($tickets) ? count($tickets) : 0;
     }
 
     /**
