@@ -1,0 +1,6 @@
+# Build artifacts / packaged plugin
+*.zip
+
+# OS files
+.DS_Store
+Thumbs.db
