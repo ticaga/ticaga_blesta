@@ -37,6 +37,8 @@ $lang['TicagaSupportPlugin.index.create'] = "Create";
 
 // Ticket Overview
 $lang['TicagaSupportPlugin.index.tickets_overview'] = "Tickets Overview";
+$lang['TicagaSupportPlugin.index.assigned'] = "Assigned";
+$lang['TicagaSupportPlugin.index.unassigned'] = "Unassigned";
 $lang['TicagaSupportPlugin.index.department'] = "Department";
 $lang['TicagaSupportPlugin.index.status'] = "Status";
 $lang['TicagaSupportPlugin.index.create_ticket'] = "Create a ticket";

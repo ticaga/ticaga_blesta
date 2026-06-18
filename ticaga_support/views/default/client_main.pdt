@@ -29,10 +29,12 @@
         <table class="table table-curved table-striped">
             <thead>
                 <tr class="heading_row">
+                    <th><?php echo $this->_('TicagaSupportPlugin.index.ticket', true);?></th>
                     <th><?php echo $this->_('TicagaSupportPlugin.index.subject', true);?></th>
                     <th><?php echo $this->_('TicagaSupportPlugin.index.department', true);?></th>
                     <th><?php echo $this->_('TicagaSupportPlugin.index.priority', true);?></th>
                     <th><?php echo $this->_('TicagaSupportPlugin.index.status', true);?></th>
+                    <th><?php echo $this->_('TicagaSupportPlugin.index.assigned', true);?></th>
                     <th class="last"></th>
                 </tr>
             </thead>
@@ -57,10 +59,12 @@
             ?>
             <tbody>
                 <tr>
+                    <td class="align-middle"><?php echo !empty($ticket["ticket_code"]) ? $this->Html->safe($ticket["ticket_code"]) : ('#' . $this->Html->safe($ticket["id"])); ?></td>
                     <td class="align-middle"><?php echo $this->Html->safe($ticket["subject"]); ?></td>
                     <td class="align-middle"><?php echo ucwords($this->Html->safe($department_name)); ?></td>
                     <td class="align-middle"><?php echo ucwords($this->Html->safe($ticket["priority"])); ?></td>
                     <td class="align-middle"><?php echo ucwords($this->Html->safe($ticket["status"])); ?></td>
+                    <td class="align-middle"><?php echo !empty($ticket["assigned_name"]) ? $this->Html->safe($ticket["assigned_name"]) : $this->_('TicagaSupportPlugin.index.unassigned', true); ?></td>
                     <td class="align-middle">
                         <a href="<?php echo $this->base_uri; ?>plugin/ticaga_support/client_main/view/<?php echo $this->Html->safe($ticket["id"]); ?>/" class="btn btn-light float-right">View</a>
                     </td>
