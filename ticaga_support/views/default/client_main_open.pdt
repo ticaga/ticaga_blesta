@@ -25,6 +25,12 @@
 		// Department closed notice (SLA business hours)
 		if (!empty($business_hours) && empty($business_hours['is_open'])) {
 		?>
+		<style>
+		.tk-closed-banner { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; margin-bottom: 16px; background: #fff6e6; border: 1px solid #f3d699; border-left: 4px solid #e0a106; border-radius: 8px; color: #7a5a00; }
+		.tk-closed-banner strong { color: #6b4e00; }
+		.tk-closed-icon { font-size: 20px; line-height: 1.3; }
+		.tk-closed-msg { margin-top: 2px; font-size: 13px; color: #8a6d1f; }
+		</style>
 		<div class="tk-closed-banner">
 			<span class="tk-closed-icon">&#9201;</span>
 			<div>

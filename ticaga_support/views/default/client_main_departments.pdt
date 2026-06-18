@@ -21,6 +21,11 @@
             $this->WidgetClient->create($this->_('ClientTickets.index.boxtitle_tickets', true), ['id'=>'client_tickets'], (isset($render_section) ? $render_section : null));
             $this->WidgetClient->startBody();
             ?>
+            <style>
+            .tk-badge { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; line-height: 1.4; }
+            .tk-badge-muted { background: #eceef2; color: #6b7280; }
+            .tk-dept-closed { margin-left: 8px; vertical-align: middle; }
+            </style>
             <div class="row">
                 <?php
                 if (!empty($depts)) {
