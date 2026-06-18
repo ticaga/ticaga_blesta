@@ -66,8 +66,13 @@
 /* Ticaga ticket view — inlined so styling is guaranteed regardless of how the
    client area loads external stylesheets (and immune to stale CSS caching). */
 .tk-ticket { padding: 4px 2px 8px; }
-.tk-meta { display: flex; flex-wrap: wrap; gap: 24px; padding: 16px 18px; margin-bottom: 16px; background: #f8f9fb; border: 1px solid #e7e9ef; border-radius: 8px; }
+.tk-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px 24px; padding: 16px 18px; margin-bottom: 16px; background: #f8f9fb; border: 1px solid #e7e9ef; border-radius: 8px; }
+.tk-meta-info { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
 .tk-meta-item { display: flex; flex-direction: column; gap: 4px; }
+.tk-meta-rating { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+.tk-meta-rating .tk-meta-label { text-align: right; }
+.tk-meta-rating .tk-rating { gap: 2px; }
+.tk-meta-rating .tk-star { font-size: 22px; }
 .tk-meta-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: #8a909d; }
 .tk-meta-value { font-size: 14px; color: #2b303b; font-weight: 500; }
 .tk-badge { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; line-height: 1.4; }
@@ -120,22 +125,42 @@
 
     <!-- Ticket meta -->
     <div class="tk-meta">
-        <div class="tk-meta-item">
-            <span class="tk-meta-label"><?php echo $this->_('TicagaSupportPlugin.index.department', true); ?></span>
-            <span class="tk-meta-value"><?php echo ucwords($this->Html->safe(isset($ticket->department_name) ? $ticket->department_name : '-')); ?></span>
+        <div class="tk-meta-info">
+            <div class="tk-meta-item">
+                <span class="tk-meta-label"><?php echo $this->_('TicagaSupportPlugin.index.department', true); ?></span>
+                <span class="tk-meta-value"><?php echo ucwords($this->Html->safe(isset($ticket->department_name) ? $ticket->department_name : '-')); ?></span>
+            </div>
+            <div class="tk-meta-item">
+                <span class="tk-meta-label"><?php echo $this->_('TicagaSupportPlugin.index.priority', true); ?></span>
+                <span class="tk-meta-value"><span class="tk-badge <?php echo $priority_class; ?>"><?php echo ucwords($this->Html->safe($priority_raw)); ?></span></span>
+            </div>
+            <div class="tk-meta-item">
+                <span class="tk-meta-label"><?php echo $this->_('TicagaSupportPlugin.index.status', true); ?></span>
+                <span class="tk-meta-value"><span class="tk-badge <?php echo $status_class; ?>"><?php echo $this->Html->safe($status_label); ?></span></span>
+            </div>
+            <div class="tk-meta-item">
+                <span class="tk-meta-label"><?php echo $this->_('TicagaSupportPlugin.index.date_opened', true); ?></span>
+                <span class="tk-meta-value"><?php echo $this->Html->safe(date('jS F Y H:i', strtotime($ticket->ticket_created))); ?></span>
+            </div>
         </div>
-        <div class="tk-meta-item">
-            <span class="tk-meta-label"><?php echo $this->_('TicagaSupportPlugin.index.priority', true); ?></span>
-            <span class="tk-meta-value"><span class="tk-badge <?php echo $priority_class; ?>"><?php echo ucwords($this->Html->safe($priority_raw)); ?></span></span>
+        <?php
+            // Star rating sits in the meta bar's right side (fills the space)
+            if (!empty($ratings_enabled)) {
+                $current_rating = (int) (isset($ticket->rating) ? $ticket->rating : 0);
+        ?>
+        <div class="tk-meta-rating">
+            <span class="tk-meta-label"><?php echo $this->_('TicagaSupportPlugin.index.rate_ticket', true); ?></span>
+            <?php $this->Form->create(null, ['class' => 'tk-rating', 'data-current' => $current_rating]); ?>
+                <span class="tk-stars">
+                    <?php for ($i = 5; $i >= 1; $i--) { ?>
+                        <button type="submit" name="rating" value="<?php echo $i; ?>"
+                            class="tk-star<?php echo ($i <= $current_rating) ? ' tk-star-on' : ''; ?>"
+                            title="<?php echo $i; ?>" aria-label="<?php echo $i; ?>">&#9733;</button>
+                    <?php } ?>
+                </span>
+            <?php $this->Form->end(); ?>
         </div>
-        <div class="tk-meta-item">
-            <span class="tk-meta-label"><?php echo $this->_('TicagaSupportPlugin.index.status', true); ?></span>
-            <span class="tk-meta-value"><span class="tk-badge <?php echo $status_class; ?>"><?php echo $this->Html->safe($status_label); ?></span></span>
-        </div>
-        <div class="tk-meta-item">
-            <span class="tk-meta-label"><?php echo $this->_('TicagaSupportPlugin.index.date_opened', true); ?></span>
-            <span class="tk-meta-value"><?php echo $this->Html->safe(date('jS F Y H:i', strtotime($ticket->ticket_created))); ?></span>
-        </div>
+        <?php } ?>
     </div>
 
     <?php
@@ -168,26 +193,6 @@
     </div>
     <?php } ?>
 
-    <?php
-        // ----- Star rating --------------------------------------------------
-        if (!empty($ratings_enabled)) {
-            $current_rating = (int) (isset($ticket->rating) ? $ticket->rating : 0);
-    ?>
-    <div class="tk-card tk-rating-card">
-        <div class="tk-card-title"><?php echo $this->_('TicagaSupportPlugin.index.rate_ticket', true); ?></div>
-        <?php $this->Form->create(null, ['class' => 'tk-rating', 'data-current' => $current_rating]); ?>
-            <span class="tk-stars">
-                <?php for ($i = 5; $i >= 1; $i--) { ?>
-                    <button type="submit" name="rating" value="<?php echo $i; ?>"
-                        class="tk-star<?php echo ($i <= $current_rating) ? ' tk-star-on' : ''; ?>"
-                        title="<?php echo $i; ?>" aria-label="<?php echo $i; ?>">&#9733;</button>
-                <?php } ?>
-            </span>
-            <span class="tk-rating-hint"><?php echo $this->_('TicagaSupportPlugin.index.rate_hint', true); ?></span>
-        <?php $this->Form->end(); ?>
-    </div>
-    <?php } ?>
-
     <!-- Original message -->
     <?php
         $opener_name = $ticket->name ?: $ticket->public_name;
@@ -197,7 +202,7 @@
             <?php echo $tk_avatar($opener_name, false); ?>
             <div class="tk-msg-author">
                 <span class="tk-msg-name"><?php echo $this->Html->safe($opener_name); ?></span>
-                <span class="tk-badge tk-badge-customer"><?php echo $this->_('TicagaSupportPlugin.index.role_customer', true); ?></span>
+                <span class="tk-badge tk-badge-customer"><?php echo $this->_('TicagaSupportPlugin.index.role_you', true); ?></span>
             </div>
             <span class="tk-msg-time"><?php echo $this->Html->safe(date('jS F Y H:i', strtotime($ticket->ticket_created))); ?></span>
         </div>

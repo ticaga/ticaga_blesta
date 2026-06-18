@@ -170,6 +170,8 @@ class ClientMain extends TicagaSupportController
             $this->set('allow_high_priority', $department_array["allows_high_priority"]);
             $this->set('is_highpriority_allowed', $prioritystatuses);
             $this->set('business_hours', $department_array['business_hours'] ?? null);
+            $this->set('cc_enabled', !isset($department_array['cc_enabled']) || $department_array['cc_enabled']);
+            $this->set('custom_fields', $department_array['custom_fields'] ?? []);
 
             $client_var = $this->Record->select()->from("ticaga_billing")->where("ticaga_billing.billing_userid", "=", $client_id)->fetch();
             $blesta_client = $this->Clients->get($client_id);
@@ -182,7 +184,7 @@ class ClientMain extends TicagaSupportController
                 $cid = $client_var->ticaga_userid ?: 0;
                 $ccid = $this->parseCarbonCopy($this->post['cc'] ?? '');
 
-                $submitarray = ["organize" => 'blesta', "department_slug" => $this->get[0], "client_id" => $cid, "priority" => $this->post['priority'], "subject" => $this->post["subject"], "message" => $message, "cc" => $ccid, 'client_email' => $email, 'public_name' => $client_name];
+                $submitarray = ["organize" => 'blesta', "department_slug" => $this->get[0], "client_id" => $cid, "priority" => $this->post['priority'], "subject" => $this->post["subject"], "message" => $message, "cc" => $ccid, 'client_email' => $email, 'public_name' => $client_name, 'custom_fields' => $this->post['custom_fields'] ?? []];
                 $ticketsubmit = $this->TicagaTickets->add($submitarray);
 
                 if ($ticketsubmit != false) {
@@ -225,6 +227,8 @@ class ClientMain extends TicagaSupportController
             $this->set('prefill_name', $prefill_name);
             $this->set('prefill_email', $prefill_email);
             $this->set('business_hours', $department_array['business_hours'] ?? null);
+            $this->set('cc_enabled', !isset($department_array['cc_enabled']) || $department_array['cc_enabled']);
+            $this->set('custom_fields', $department_array['custom_fields'] ?? []);
 
             if (!empty($this->post)) {
                 $priority = $this->post['priority'] ?? 'none';
@@ -233,7 +237,7 @@ class ClientMain extends TicagaSupportController
                 $client_name = !empty($this->post['public_name']) ? $this->post['public_name'] : $prefill_name;
                 $ccid = $this->parseCarbonCopy($this->post['cc'] ?? '');
 
-                $submitarray = ["organize" => 'blesta', "department_slug" => $this->get[0], "client_id" => '0', "priority" => $priority, "subject" => $this->post["subject"], "message" => $message, "cc" => $ccid, 'client_email' => $email, 'public_name' => $client_name];
+                $submitarray = ["organize" => 'blesta', "department_slug" => $this->get[0], "client_id" => '0', "priority" => $priority, "subject" => $this->post["subject"], "message" => $message, "cc" => $ccid, 'client_email' => $email, 'public_name' => $client_name, 'custom_fields' => $this->post['custom_fields'] ?? []];
                 $ticketsubmit = $this->TicagaTickets->add($submitarray);
 
                 if ($ticketsubmit) {

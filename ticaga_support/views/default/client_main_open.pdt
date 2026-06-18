@@ -72,12 +72,14 @@
 				$this->Form->fieldText("subject", null, ['id' => 'subject', 'class' => 'form-control']);
 			?>
 		</div>
+		<?php if (!isset($cc_enabled) || $cc_enabled) { ?>
 		<div class="form-group">
 			<?php
 				$this->Form->label($this->_('TicagaSupportPlugin.index.carbon_copy',true), "cc");
 				$this->Form->fieldText("cc", null, ['id' => 'cc', 'class' => 'form-control', 'placeholder' => $this->_('TicagaSupportPlugin.index.carbon_copy_placeholder', true)]);
 			?>
 		</div>
+		<?php } ?>
 		<div class="form-group">
 			<?php
 				if($allow_high_priority != '3'){
@@ -99,6 +101,15 @@
 				$this->Form->fieldTextarea('message', null, ['id' => 'message', 'rows' => 5, 'class' => 'form-control', 'data-markdown-editor' => '']);
             ?>
         </div>
+		<?php
+			// Department custom fields (only those visible on public/guest tickets)
+			require_once dirname(__FILE__) . '/custom_field_helper.php';
+			$cf_defs = (isset($custom_fields) && is_array($custom_fields)) ? $custom_fields : [];
+			foreach ($cf_defs as $cf) {
+				if (empty($cf['visible_on_public_ticket'])) { continue; }
+				echo ticaga_render_custom_field($cf);
+			}
+		?>
 		<button type="submit" class="btn btn-light float-right">
             <?php echo $this->_('TicagaSupportPlugin.index.submit', true);?>
         </button>

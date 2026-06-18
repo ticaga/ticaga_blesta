@@ -629,18 +629,35 @@ div.reply .image-attachments {
 .tk-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 24px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px 24px;
     padding: 16px 18px;
     margin-bottom: 16px;
     background: #f8f9fb;
     border: 1px solid #e7e9ef;
     border-radius: 8px;
 }
+.tk-meta-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 28px;
+    align-items: flex-start;
+}
 .tk-meta-item {
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
+.tk-meta-rating {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-end;
+}
+.tk-meta-rating .tk-meta-label { text-align: right; }
+.tk-meta-rating .tk-rating { gap: 2px; }
+.tk-meta-rating .tk-star { font-size: 22px; }
 .tk-meta-label {
     font-size: 11px;
     font-weight: 600;
