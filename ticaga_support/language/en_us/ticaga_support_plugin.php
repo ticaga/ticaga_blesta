@@ -49,6 +49,23 @@ $lang['TicagaSupportPlugin.index.response_title'] = "Reply";
 $lang['TicagaSupportPlugin.index.ticket_information'] = "Ticket Information";
 $lang['TicagaSupportPlugin.index.submit'] = "Submit";
 
+// Ticket view
+$lang['TicagaSupportPlugin.index.date_opened'] = "Date Opened";
+$lang['TicagaSupportPlugin.index.custom_fields'] = "Additional Information";
+$lang['TicagaSupportPlugin.index.cf_hidden'] = "Hidden";
+$lang['TicagaSupportPlugin.index.rate_ticket'] = "Rate this ticket";
+$lang['TicagaSupportPlugin.index.rate_hint'] = "Click a star to rate";
+$lang['TicagaSupportPlugin.index.role_customer'] = "Customer";
+$lang['TicagaSupportPlugin.index.role_employee'] = "Employee";
+$lang['TicagaSupportPlugin.index.role_you'] = "You";
+$lang['TicagaSupportPlugin.index.submit_response'] = "Submit a response";
+$lang['TicagaSupportPlugin.index.ticket_closed'] = "This ticket is closed";
+$lang['TicagaSupportPlugin.index.ticket_closed_msg'] = "This ticket has been closed and can no longer receive replies. Please open a new ticket if you still need help.";
+
+// Department business hours
+$lang['TicagaSupportPlugin.index.dept_closed'] = "This department is currently closed";
+$lang['TicagaSupportPlugin.index.closed'] = "Closed";
+
 // Syncing Account
 $lang['TicagaSupportPlugin.index.sync_account'] = "Sync Ticaga account";
 $lang['TicagaSupportPlugin.index.sync_client_id'] = "Ticaga Customer ID";

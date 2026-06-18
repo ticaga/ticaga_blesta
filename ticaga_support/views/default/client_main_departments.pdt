@@ -30,7 +30,12 @@
                 <div class="col-md-6">
                     <div class="list-group mb-3">
                         <a href="<?php echo $this->Html->safe($this->base_uri . 'plugin/ticaga_support/client_main/open/' . (isset($department['slug']) ? $department['slug'] : null) . '/');?>" class="list-group-item p-3">
-                            <h4 class="border-0 pb-0"><?php echo (isset($department['department_name']) ? $this->Html->safe($department['department_name']) : null);?></h4>
+                            <h4 class="border-0 pb-0">
+                                <?php echo (isset($department['department_name']) ? $this->Html->safe($department['department_name']) : null);?>
+                                <?php if (!empty($department['business_hours']) && empty($department['business_hours']['is_open'])) { ?>
+                                    <span class="tk-badge tk-badge-muted tk-dept-closed" title="<?php echo $this->Html->safe($department['business_hours']['message'] ?? ''); ?>"><?php echo $this->_('TicagaSupportPlugin.index.closed', true); ?></span>
+                                <?php } ?>
+                            </h4>
                             <?php
                             if (!empty($department['department_description'])) {
                                 echo $this->Html->safe($department['department_description']);

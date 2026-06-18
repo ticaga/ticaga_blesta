@@ -618,3 +618,229 @@ div.reply .image-attachments {
 .text_link {
     word-wrap: break-word;
 }
+/* ============================================================
+   Ticaga ticket view (tk-) — chat-style ticket layout
+   ============================================================ */
+.tk-ticket {
+    padding: 4px 2px 8px;
+}
+
+/* Meta bar */
+.tk-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+    background: #f8f9fb;
+    border: 1px solid #e7e9ef;
+    border-radius: 8px;
+}
+.tk-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.tk-meta-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #8a909d;
+}
+.tk-meta-value {
+    font-size: 14px;
+    color: #2b303b;
+    font-weight: 500;
+}
+
+/* Badges */
+.tk-badge {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+.tk-badge-info     { background: #e7f0ff; color: #1f5fd1; }
+.tk-badge-warning  { background: #fff3da; color: #a96a00; }
+.tk-badge-success  { background: #e3f6e8; color: #1c7a3e; }
+.tk-badge-danger   { background: #fde6e6; color: #c1342d; }
+.tk-badge-muted    { background: #eceef2; color: #6b7280; }
+.tk-badge-staff    { background: #4f46e5; color: #fff; }
+.tk-badge-customer { background: #fbbf24; color: #533f03; }
+
+/* Cards */
+.tk-card {
+    border: 1px solid #e7e9ef;
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+    background: #fff;
+}
+.tk-card-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: #6b7280;
+    margin-bottom: 12px;
+}
+
+/* Custom fields */
+.tk-cf-grid {
+    display: grid;
+    grid-template-columns: minmax(140px, 220px) 1fr;
+    gap: 8px 18px;
+    margin: 0;
+}
+.tk-cf-grid dt {
+    font-weight: 600;
+    color: #4b5563;
+    margin: 0;
+}
+.tk-cf-grid dd {
+    margin: 0;
+    color: #2b303b;
+    word-break: break-word;
+}
+.tk-cf-hidden { color: #9ca3af; font-style: italic; }
+.tk-cf-empty  { color: #c0c4cc; }
+
+/* Rating stars */
+.tk-rating {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+/* Stars are rendered 5..1 and reversed so they read 1..5 left-to-right, while
+   the forward sibling combinator can still fill from the hovered star down. */
+.tk-stars {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+}
+.tk-star {
+    background: none;
+    border: none;
+    padding: 0 2px;
+    font-size: 30px;
+    line-height: 1;
+    cursor: pointer;
+    color: #d6d9e0;
+    transition: color .12s ease, transform .12s ease;
+}
+.tk-star-on { color: #f5b301; }
+/* On hover, dim the row then light the hovered star and every lower one. */
+.tk-stars:hover .tk-star { color: #d6d9e0; }
+.tk-stars .tk-star:hover,
+.tk-stars .tk-star:hover ~ .tk-star { color: #f5b301; }
+.tk-rating-hint {
+    margin-left: 10px;
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+/* Messages */
+.tk-msg {
+    border: 1px solid #e7e9ef;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    background: #fff;
+}
+.tk-msg-staff {
+    border-left: 3px solid #4f46e5;
+    background: #f6f5ff;
+}
+.tk-msg-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.tk-msg-author {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.tk-msg-name {
+    font-weight: 700;
+    color: #2b303b;
+}
+.tk-msg-time {
+    margin-left: auto;
+    font-size: 12px;
+    color: #9ca3af;
+    white-space: nowrap;
+}
+.tk-msg-body {
+    color: #374151;
+    line-height: 1.55;
+    word-break: break-word;
+}
+
+/* Avatars */
+.tk-avatar {
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    background: #f5b301;
+}
+.tk-avatar-staff { background: #4f46e5; }
+
+/* Reply box */
+.tk-reply { margin-top: 4px; }
+.tk-reply .btn { margin-top: 6px; }
+
+@media (max-width: 575px) {
+    .tk-meta { gap: 14px; }
+    .tk-cf-grid { grid-template-columns: 1fr; gap: 2px 0; }
+    .tk-cf-grid dd { margin-bottom: 8px; }
+}
+
+/* Department / ticket closed notices */
+.tk-closed-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    background: #fff6e6;
+    border: 1px solid #f3d699;
+    border-left: 4px solid #e0a106;
+    border-radius: 8px;
+    color: #7a5a00;
+}
+.tk-closed-banner strong { color: #6b4e00; }
+.tk-closed-icon {
+    font-size: 20px;
+    line-height: 1.3;
+}
+.tk-closed-msg {
+    margin-top: 2px;
+    font-size: 13px;
+    color: #8a6d1f;
+}
+/* Closed ticket uses a neutral (grey) tone rather than the amber "warning" look */
+.tk-closed-ticket {
+    background: #f3f4f6;
+    border-color: #e0e2e8;
+    border-left-color: #9ca3af;
+    color: #4b5563;
+}
+.tk-closed-ticket strong { color: #374151; }
+.tk-closed-ticket .tk-closed-msg { color: #6b7280; }
+.tk-dept-closed {
+    margin-left: 8px;
+    vertical-align: middle;
+}

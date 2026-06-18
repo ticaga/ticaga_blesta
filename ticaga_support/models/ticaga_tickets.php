@@ -16,6 +16,15 @@ class TicagaTickets extends TicagaSupportModel
     private $system_staff_id = 0;
 
     /**
+     * Holds a human-readable description of the most recent API failure, so a
+     * caller (e.g. the client controller) can show the real reason rather than
+     * a generic "failed" message. Null when the last call succeeded.
+     *
+     * @var string|null
+     */
+    private $last_error = null;
+
+    /**
      * Constructor
      */
     public function __construct()
@@ -82,13 +91,18 @@ class TicagaTickets extends TicagaSupportModel
 		$client_id = $vars['client_id'] ?? '0';
 		$cc = $vars["cc"] ?? "null";
 		$ip_address = $_SERVER['REMOTE_ADDR'] ?? '';
+		// The originating billing platform + company, so Ticaga can section/map by
+		// company across any billing system. Especially useful for guest tickets
+		// where there is no linked customer/connection to infer it from.
+		$billing_system = 'blesta';
+		$billing_company_id = Configure::get('Blesta.company_id');
 
 		if ($cc != "null")
 		{
             $ccid = implode(",", $cc);
-            $callvars = array('organize' => 'blesta', 'customer_id' => $client_id, "subject" => $vars['subject'], "priority" => $vars['priority'], "message" => $vars["message"], "cc" => $ccid, "assigned" => "0", "department_slug" => $vars['department_slug'], "ip_address" => $ip_address, 'public_email' => $vars["client_email"], 'public_name' => $vars["public_name"]);
+            $callvars = array('organize' => 'blesta', 'customer_id' => $client_id, "subject" => $vars['subject'], "priority" => $vars['priority'], "message" => $vars["message"], "cc" => $ccid, "assigned" => "0", "department_slug" => $vars['department_slug'], "ip_address" => $ip_address, 'public_email' => $vars["client_email"], 'public_name' => $vars["public_name"], 'billing_system' => $billing_system, 'billing_company_id' => $billing_company_id);
 		} else {
-		    $callvars = array('organize' => 'blesta', 'customer_id' => $client_id, "subject" => $vars['subject'], "priority" => $vars['priority'], "message" => $vars["message"], "assigned" => "0", "department_slug" => $vars['department_slug'], "ip_address" => $ip_address, 'public_email' => $vars["client_email"], 'public_name' => null);
+		    $callvars = array('organize' => 'blesta', 'customer_id' => $client_id, "subject" => $vars['subject'], "priority" => $vars['priority'], "message" => $vars["message"], "assigned" => "0", "department_slug" => $vars['department_slug'], "ip_address" => $ip_address, 'public_email' => $vars["client_email"], 'public_name' => null, 'billing_system' => $billing_system, 'billing_company_id' => $billing_company_id);
 		}
 
 		$resp = $this->TicagaSettings->callAPIPost("tickets/create", $callvars, $api->api_url, $api->api_email, $api->api_key);
@@ -96,10 +110,74 @@ class TicagaTickets extends TicagaSupportModel
 
         if ($resp_test)
 		{
+		    $this->last_error = null;
 		    return json_decode($resp['response']);
 		} else {
+		    $this->last_error = $this->describeApiError($resp);
+		    error_log('[TicagaSupport] ticket create failed: ' . $this->last_error
+		        . ' sent=' . json_encode($callvars));
 		    return false;
 		}
+    }
+
+    /**
+     * Returns a human-readable description of the most recent API failure, or
+     * null if the last API call succeeded.
+     *
+     * @return string|null
+     */
+    public function getLastError()
+    {
+        return $this->last_error;
+    }
+
+    /**
+     * Builds a human-readable message from a callAPI/callAPIPost response array.
+     * Surfaces the API's own error/validation messages where available, with a
+     * sensible fallback per transport status.
+     *
+     * @param array|null $resp The response array from callAPI/callAPIPost
+     * @return string
+     */
+    private function describeApiError($resp)
+    {
+        $status = $resp['status'] ?? 'error';
+        $http = $resp['http_code'] ?? null;
+
+        // Try to pull a message out of the JSON body the API returned.
+        $body_message = null;
+        if (!empty($resp['response'])) {
+            $decoded = json_decode($resp['response'], true);
+            if (is_array($decoded)) {
+                if (!empty($decoded['errors']) && is_array($decoded['errors'])) {
+                    // Laravel validation errors: flatten to a single string.
+                    $messages = [];
+                    foreach ($decoded['errors'] as $field_errors) {
+                        foreach ((array)$field_errors as $msg) {
+                            $messages[] = $msg;
+                        }
+                    }
+                    $body_message = implode(' ', $messages);
+                } elseif (!empty($decoded['error'])) {
+                    $body_message = is_string($decoded['error']) ? $decoded['error'] : json_encode($decoded['error']);
+                } elseif (!empty($decoded['message'])) {
+                    $body_message = $decoded['message'];
+                }
+            }
+        }
+
+        switch ($status) {
+            case 'noresponse':
+                return 'Could not reach the support system. Please try again shortly.'
+                    . (!empty($resp['error']) ? ' (' . $resp['error'] . ')' : '');
+            case 'autherror':
+                return 'The support system rejected the request (authentication error). Please contact an administrator.';
+            case 'notfound':
+                return $body_message ?: 'The requested support resource was not found.';
+            default:
+                $msg = $body_message ?: 'The support system returned an unexpected error.';
+                return $http ? ($msg . ' (HTTP ' . $http . ')') : $msg;
+        }
     }
 
     /**
@@ -260,23 +338,25 @@ class TicagaTickets extends TicagaSupportModel
      */
     public function addReply($ticket_id, array $vars, ?array $files = null)
     {
-        $company_id = Configure::get('Blesta.company_id');
-        $apiKey = $this->getAPIInfoByCompanyId($company_id)->api_key;
-		$apiURL = $this->getAPIInfoByCompanyId($company_id)->api_url;
-		$apiEmail = $this->getAPIInfoByCompanyId($company_id)->api_email;
+        $api = $this->getAPIInfoByCompanyId();
 
         $callvars = array(
-            'user_id' => $vars["user_id"], 
-            "ticket_number" => $ticket_id, 
-            "content" => $vars["content"], 
-            "is_note" => '0', 
-            "employee_response" => "0", 
+            'user_id' => $vars["user_id"],
+            "ticket_number" => $ticket_id,
+            "content" => $vars["content"],
+            "is_note" => '0',
+            "employee_response" => "0",
             "organize" => "blesta"
         );
 
-        $resp = $this->TicagaSettings->callAPIPost("responses/create", $callvars, $apiURL, $apiEmail, $apiKey);
+        $resp = $this->TicagaSettings->callAPIPost("responses/create", $callvars, $api->api_url, $api->api_email, $api->api_key);
+
+        // Only report success when the reply was actually created
+        if (($resp['status'] ?? '') !== 'success') {
+            return false;
+        }
+
         return $resp;
-		
     }
 
     /**
@@ -377,12 +457,43 @@ class TicagaTickets extends TicagaSupportModel
         if ($resp)
         {
             $ticket_info = json_decode($resp['response']);
-            return array("ticket" => $ticket_info->tickets);
+            return array(
+                "ticket" => $ticket_info->tickets ?? null,
+                // Custom fields (when the Ticaga CustomFields extension is enabled
+                // and the department has customer-visible fields) and whether
+                // ticket ratings are enabled, so the view can render them.
+                "custom_fields" => $ticket_info->custom_fields ?? null,
+                "ratings_enabled" => $ticket_info->ratings_enabled ?? false,
+            );
         } else {
             return false;
         }
     }
-	
+
+    /**
+     * Submits a star rating (0-5) for a ticket on behalf of the given customer.
+     *
+     * @param int $ticket_id The Ticaga ticket id to rate
+     * @param int $rating The star rating (0 clears, 1-5 stars)
+     * @param int $customer_id The Ticaga customer id that owns the ticket
+     * @return bool True on success, false otherwise
+     */
+    public function rateTicket($ticket_id, $rating, $customer_id)
+    {
+        $api = $this->getAPIInfoByCompanyId();
+
+        $callvars = array(
+            'ticket_id' => $ticket_id,
+            'rating' => (int) $rating,
+            'customer_id' => $customer_id,
+            'organize' => 'blesta'
+        );
+
+        $resp = $this->TicagaSettings->callAPIPost('tickets/rate', $callvars, $api->api_url, $api->api_email, $api->api_key);
+
+        return ($resp['status'] ?? '') === 'success';
+    }
+
 	/**
      * Retrieves a specific ticket
      *
@@ -633,22 +744,25 @@ class TicagaTickets extends TicagaSupportModel
      * Idempotently links a single Blesta client to a Ticaga customer.
      *
      * Uses the customers/link endpoint, which finds the Ticaga user by email
-     * (creating one if none exists) and sets the billing link. Skips clients
-     * that are already linked. Safe to call repeatedly.
+     * (creating one if none exists) and sets the billing link. Safe to call
+     * repeatedly.
      *
-     * @param int $client_id The Blesta client ID
-     * @return array ['status' => 'linked'|'skipped'|'no_api'|'invalid'|'failed', 'ticaga_userid' => int]
+     * @param int  $client_id The Blesta client ID
+     * @param bool $force     When true, re-verify/repair the Ticaga-side link even
+     *                        if a local mapping already exists (e.g. on login, to
+     *                        catch accounts that exist on Ticaga but aren't linked).
+     * @return array ['status' => 'linked'|'relinked'|'skipped'|'no_api'|'invalid'|'failed', 'ticaga_userid' => int]
      */
-    public function linkClient($client_id)
+    public function linkClient($client_id, $force = false)
     {
         if (empty($client_id)) {
             return ['status' => 'invalid'];
         }
 
-        // Idempotency: already linked?
+        // Already mapped locally? Skip unless forced to re-verify the Ticaga side.
         $existing = $this->Record->select()->from('ticaga_billing')
             ->where('billing_userid', '=', $client_id)->fetch();
-        if ($existing) {
+        if ($existing && !$force) {
             return ['status' => 'skipped'];
         }
 
@@ -667,24 +781,34 @@ class TicagaTickets extends TicagaSupportModel
             $name = $client->email;
         }
 
+        // billing_system is lowercase 'blesta' to match the Ticaga Blesta extension
         $resp = $this->TicagaSettings->callAPIPost('customers/link', [
             'email' => $client->email,
             'name' => $name,
             'billing_id' => $client_id,
-            'billing_system' => 'Blesta'
+            'billing_system' => 'blesta'
         ], $api->api_url, $api->api_email, $api->api_key);
 
         $body = isset($resp['response']) ? json_decode($resp['response'], true) : null;
         $ticaga_user_id = $body['user']['id'] ?? null;
         if (empty($ticaga_user_id)) {
+            if (($resp['status'] ?? '') !== 'success') {
+                error_log('[TicagaSupport] customers/link failed. api status: ' . ($resp['status'] ?? 'n/a') . ' | raw response: ' . substr((string) ($resp['response'] ?? ''), 0, 500));
+            }
             return ['status' => 'failed'];
+        }
+
+        // Local mapping already present (forced re-verify) — the Ticaga side was
+        // just ensured by the call above, so leave the local row as-is.
+        if ($existing) {
+            return ['status' => 'relinked', 'ticaga_userid' => $ticaga_user_id];
         }
 
         $this->Record->insert('ticaga_billing', [
             'ticaga_userid' => $ticaga_user_id,
             'billing_userid' => $client_id,
             'email_address' => $client->email,
-            'billing_system' => 'Blesta',
+            'billing_system' => 'blesta',
             'company_id' => Configure::get('Blesta.company_id')
         ]);
 

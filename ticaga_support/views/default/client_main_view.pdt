@@ -5,81 +5,173 @@
     <div class="col-md-12">
     <?php
     }
-    	echo (isset($message) ? $message : null);
-		// Create widget
-		$this->Widget->clear();
-		$this->Widget->setStyleSheet($this->view_dir . "css/styles.css");
-        $ticket_title = $this->_('TicagaSupportPlugin.index.ticket', true) . ' #' . $this->Html->safe($ticket->id) . ' - ' . mb_strimwidth($this->Html->safe($ticket->subject), 0, 60, "...");
-		
+        echo (isset($message) ? $message : null);
+
+        // Create widget
+        $this->Widget->clear();
+        $this->Widget->setStyleSheet($this->view_dir . "css/styles.css");
+
+        // Prefer the human-readable ticket code (e.g. ABCD/12345); fall back to id
+        $ticket_ref = !empty($ticket->ticket_code) ? $ticket->ticket_code : ('#' . $this->Html->safe($ticket->id));
+        $ticket_title = $this->_('TicagaSupportPlugin.index.ticket', true) . ' ' . $ticket_ref
+            . ' - ' . mb_strimwidth($this->Html->safe($ticket->subject), 0, 60, "...");
+
         $this->WidgetClient->create($ticket_title);
         $this->WidgetClient->startBody();
 
+        // ----- Display helpers -------------------------------------------------
+        // Map raw status to its human label and a contextual colour
+        $status_raw = isset($ticket->status) ? $ticket->status : '';
+        $status_label = isset($statuses[$status_raw]) ? $statuses[$status_raw] : ucwords(str_replace('_', ' ', $status_raw));
+        $status_classes = [
+            'open' => 'tk-badge-info',
+            'awaiting_reply' => 'tk-badge-warning',
+            'in_progress' => 'tk-badge-info',
+            'on_hold' => 'tk-badge-muted',
+            'closed' => 'tk-badge-muted',
+        ];
+        $status_class = isset($status_classes[$status_raw]) ? $status_classes[$status_raw] : 'tk-badge-info';
+
+        // Priority colour
+        $priority_raw = isset($ticket->priority) ? $ticket->priority : '';
+        $priority_classes = [
+            'emergency' => 'tk-badge-danger',
+            'critical' => 'tk-badge-danger',
+            'high' => 'tk-badge-danger',
+            'medium' => 'tk-badge-warning',
+            'low' => 'tk-badge-success',
+        ];
+        $priority_class = isset($priority_classes[$priority_raw]) ? $priority_classes[$priority_raw] : 'tk-badge-muted';
+
+        // Builds a coloured avatar with the author's initials
+        $tk_avatar = function ($name, $is_staff) {
+            $name = trim((string) $name);
+            $initials = '';
+            foreach (preg_split('/\s+/', $name) as $part) {
+                if ($part !== '') {
+                    $initials .= mb_strtoupper(mb_substr($part, 0, 1));
+                }
+                if (mb_strlen($initials) >= 2) {
+                    break;
+                }
+            }
+            if ($initials === '') {
+                $initials = '?';
+            }
+            $cls = $is_staff ? 'tk-avatar tk-avatar-staff' : 'tk-avatar';
+            return '<div class="' . $cls . '">' . htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') . '</div>';
+        };
 ?>
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="border rounded overflow-hidden flex-md-row h-md-250 position-relative">
-                <div class="col p-4 d-flex flex-column position-static">
-                    <strong class="d-inline-block mb-2 text-secondary">
-                        <?php echo $this->Html->safe($ticket->name ?: $ticket->public_name); ?> - <?php echo $this->Html->safe(date('jS F Y H:i',strtotime($ticket->ticket_created))); ?>
-                    </strong>
-                    <p class="card-text mb-auto">
-                        <?php echo nl2br($this->Html->safe($ticket->message)); ?>
-                    </p>
-                </div>
-            </div>
+<div class="tk-ticket">
+
+    <!-- Ticket meta -->
+    <div class="tk-meta">
+        <div class="tk-meta-item">
+            <span class="tk-meta-label"><?php echo $this->_('TicagaSupportPlugin.index.department', true); ?></span>
+            <span class="tk-meta-value"><?php echo ucwords($this->Html->safe(isset($ticket->department_name) ? $ticket->department_name : '-')); ?></span>
+        </div>
+        <div class="tk-meta-item">
+            <span class="tk-meta-label"><?php echo $this->_('TicagaSupportPlugin.index.priority', true); ?></span>
+            <span class="tk-meta-value"><span class="tk-badge <?php echo $priority_class; ?>"><?php echo ucwords($this->Html->safe($priority_raw)); ?></span></span>
+        </div>
+        <div class="tk-meta-item">
+            <span class="tk-meta-label"><?php echo $this->_('TicagaSupportPlugin.index.status', true); ?></span>
+            <span class="tk-meta-value"><span class="tk-badge <?php echo $status_class; ?>"><?php echo $this->Html->safe($status_label); ?></span></span>
+        </div>
+        <div class="tk-meta-item">
+            <span class="tk-meta-label"><?php echo $this->_('TicagaSupportPlugin.index.date_opened', true); ?></span>
+            <span class="tk-meta-value"><?php echo $this->Html->safe(date('jS F Y H:i', strtotime($ticket->ticket_created))); ?></span>
         </div>
     </div>
-    <div class="row mt-2">
-        <div class="col-md-12">
-            <div class="border rounded overflow-hidden flex-md-row h-md-250 position-relative">
-                <div class="col p-4 d-flex flex-column position-static">
-                    <strong class="d-inline-block mb-2 text-secondary">
-                        Submit a response 
-                    </strong>
+
+    <?php
+        // ----- Custom fields ------------------------------------------------
+        $cf_list = isset($custom_fields) ? (array) $custom_fields : [];
+        if (!empty($cf_list)) {
+    ?>
+    <div class="tk-card tk-custom-fields">
+        <div class="tk-card-title"><?php echo $this->_('TicagaSupportPlugin.index.custom_fields', true); ?></div>
+        <dl class="tk-cf-grid">
+            <?php foreach ($cf_list as $cf) { ?>
+                <dt><?php echo $this->Html->safe(isset($cf->name) ? $cf->name : ''); ?></dt>
+                <dd>
                     <?php
-                        $this->Form->create();
+                        if (!empty($cf->is_encrypted)) {
+                            echo '<span class="tk-cf-hidden">' . $this->_('TicagaSupportPlugin.index.cf_hidden', true) . '</span>';
+                        } else {
+                            $val = isset($cf->value) ? $cf->value : '';
+                            if (is_array($val)) {
+                                $val = implode(', ', $val);
+                            }
+                            echo ($val === '' || $val === null)
+                                ? '<span class="tk-cf-empty">&mdash;</span>'
+                                : nl2br($this->Html->safe($val));
+                        }
                     ?>
-                    <div class="form-group">
-                        <?php
-                            $this->Form->fieldTextarea('response_content', null, ['id' => 'response_content', 'rows' => 5, 'class' => 'form-control', 'data-markdown-editor' => '']);
-                        ?>
-                    </div>
-                    <button type="submit" class="btn btn-light float-right">
-                        <?php echo $this->_('TicagaSupportPlugin.index.submit', true);?>
-                    </button>
-                    <?php
-                        $this->Form->end();
-                    ?>
-                </div>
-            </div>
-        </div>
+                </dd>
+            <?php } ?>
+        </dl>
     </div>
-    
+    <?php } ?>
+
+    <?php
+        // ----- Star rating --------------------------------------------------
+        if (!empty($ratings_enabled)) {
+            $current_rating = (int) (isset($ticket->rating) ? $ticket->rating : 0);
+    ?>
+    <div class="tk-card tk-rating-card">
+        <div class="tk-card-title"><?php echo $this->_('TicagaSupportPlugin.index.rate_ticket', true); ?></div>
+        <?php $this->Form->create(null, ['class' => 'tk-rating', 'data-current' => $current_rating]); ?>
+            <span class="tk-stars">
+                <?php for ($i = 5; $i >= 1; $i--) { ?>
+                    <button type="submit" name="rating" value="<?php echo $i; ?>"
+                        class="tk-star<?php echo ($i <= $current_rating) ? ' tk-star-on' : ''; ?>"
+                        title="<?php echo $i; ?>" aria-label="<?php echo $i; ?>">&#9733;</button>
+                <?php } ?>
+            </span>
+            <span class="tk-rating-hint"><?php echo $this->_('TicagaSupportPlugin.index.rate_hint', true); ?></span>
+        <?php $this->Form->end(); ?>
+    </div>
+    <?php } ?>
+
+    <!-- Original message -->
+    <?php
+        $opener_name = $ticket->name ?: $ticket->public_name;
+    ?>
+    <div class="tk-msg">
+        <div class="tk-msg-head">
+            <?php echo $tk_avatar($opener_name, false); ?>
+            <div class="tk-msg-author">
+                <span class="tk-msg-name"><?php echo $this->Html->safe($opener_name); ?></span>
+                <span class="tk-badge tk-badge-customer"><?php echo $this->_('TicagaSupportPlugin.index.role_customer', true); ?></span>
+            </div>
+            <span class="tk-msg-time"><?php echo $this->Html->safe(date('jS F Y H:i', strtotime($ticket->ticket_created))); ?></span>
+        </div>
+        <div class="tk-msg-body"><?php echo nl2br($this->Html->safe($ticket->message)); ?></div>
+    </div>
+
+    <!-- Replies -->
     <?php
         if (isset($replies) && !empty($replies)) {
             foreach ($replies as $reply) {
                 foreach ($reply as $response) {
-                    if($response['is_note'] != '1'){
+                    if ($response['is_note'] != '1') {
+                        $is_staff = ($response['employee_response'] == '1');
     ?>
-    <div class="row mt-2">
-        <div class="col-md-12">
-            <div class="border rounded overflow-hidden flex-md-row h-md-250 position-relative">
-                <div class="col p-4 d-flex flex-column position-static">
-                    <strong class="d-inline-block mb-2 text-secondary">
-                        <?php echo $this->Html->safe($response['user_name']); ?> <?php if($response['employee_response'] == '1'){ ?>
-                            <span class="badge badge-primary">Employee</span>
-                        <?php } else { ?>
-                            <span class="badge badge-warning">You</span>
-                        <?php } ?> 
-                        - <?php echo $this->Html->safe(date('jS F Y H:i',strtotime($response['created_at']))); ?>
-                    </strong>
-                    <p class="card-text mb-auto">
-                        <?php echo nl2br($this->Html->safe($response['content'])); ?>
-                    </p>
-                </div>
+    <div class="tk-msg<?php echo $is_staff ? ' tk-msg-staff' : ''; ?>">
+        <div class="tk-msg-head">
+            <?php echo $tk_avatar($response['user_name'], $is_staff); ?>
+            <div class="tk-msg-author">
+                <span class="tk-msg-name"><?php echo $this->Html->safe($response['user_name']); ?></span>
+                <?php if ($is_staff) { ?>
+                    <span class="tk-badge tk-badge-staff"><?php echo $this->_('TicagaSupportPlugin.index.role_employee', true); ?></span>
+                <?php } else { ?>
+                    <span class="tk-badge tk-badge-customer"><?php echo $this->_('TicagaSupportPlugin.index.role_you', true); ?></span>
+                <?php } ?>
             </div>
+            <span class="tk-msg-time"><?php echo $this->Html->safe(date('jS F Y H:i', strtotime($response['created_at']))); ?></span>
         </div>
+        <div class="tk-msg-body"><?php echo nl2br($this->Html->safe($response['content'])); ?></div>
     </div>
     <?php
                     }
@@ -87,14 +179,41 @@
             }
         }
     ?>
-    
-<?php
-    $this->WidgetClient->endBody();
-    $this->WidgetClient->end();
-?>
+
+    <!-- Reply box (hidden once the ticket is closed) -->
+    <?php if ($status_raw === 'closed') { ?>
+    <div class="tk-closed-banner tk-closed-ticket">
+        <span class="tk-closed-icon">&#128274;</span>
+        <div>
+            <strong><?php echo $this->_('TicagaSupportPlugin.index.ticket_closed', true); ?></strong>
+            <div class="tk-closed-msg"><?php echo $this->_('TicagaSupportPlugin.index.ticket_closed_msg', true); ?></div>
+        </div>
+    </div>
+    <?php } else { ?>
+    <div class="tk-card tk-reply">
+        <div class="tk-card-title"><?php echo $this->_('TicagaSupportPlugin.index.submit_response', true); ?></div>
+        <?php $this->Form->create(); ?>
+            <div class="form-group">
+                <?php
+                    $this->Form->fieldTextarea('response_content', null, ['id' => 'response_content', 'rows' => 5, 'class' => 'form-control', 'data-markdown-editor' => '']);
+                ?>
+            </div>
+            <button type="submit" class="btn btn-light float-right">
+                <?php echo $this->_('TicagaSupportPlugin.index.submit', true); ?>
+            </button>
+        <?php $this->Form->end(); ?>
+    </div>
+    <?php } ?>
 
 </div>
 <?php
     $this->WidgetClient->endBody();
     $this->WidgetClient->end();
+
+    // Close the outer container opened above (when not rendering only the widget)
+    if (!(isset($render_section) ? $render_section : null)) {
+?>
+    </div>
+<?php
+    }
 ?>

@@ -169,6 +169,7 @@ class ClientMain extends TicagaSupportController
             $this->set('department_name', $department_array["department_name"]);
             $this->set('allow_high_priority', $department_array["allows_high_priority"]);
             $this->set('is_highpriority_allowed', $prioritystatuses);
+            $this->set('business_hours', $department_array['business_hours'] ?? null);
 
             $client_var = $this->Record->select()->from("ticaga_billing")->where("ticaga_billing.billing_userid", "=", $client_id)->fetch();
             $blesta_client = $this->Clients->get($client_id);
@@ -188,7 +189,8 @@ class ClientMain extends TicagaSupportController
                     $this->flashMessage('message', "Success! Your ticket has been sent to our team.", null, false);
                     $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');
                 } else {
-                    $this->flashMessage('error', "Failure Submitting Ticket", null, false);
+                    $error = $this->TicagaTickets->getLastError();
+                    $this->flashMessage('error', $error ? ("Failure submitting ticket: " . $error) : "Failure Submitting Ticket", null, false);
                     $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/departments');
                 }
             }
@@ -222,6 +224,7 @@ class ClientMain extends TicagaSupportController
             $this->set('is_highpriority_allowed', $prioritystatuses);
             $this->set('prefill_name', $prefill_name);
             $this->set('prefill_email', $prefill_email);
+            $this->set('business_hours', $department_array['business_hours'] ?? null);
 
             if (!empty($this->post)) {
                 $priority = $this->post['priority'] ?? 'none';
@@ -242,7 +245,8 @@ class ClientMain extends TicagaSupportController
                     $this->flashMessage('message', $success, null, false);
                     $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');
                 } else {
-                    $this->flashMessage('error', "Sorry your ticket couldn't be submitted. Please try again.", null, false);
+                    $error = $this->TicagaTickets->getLastError();
+                    $this->flashMessage('error', $error ? ("Sorry your ticket couldn't be submitted: " . $error) : "Sorry your ticket couldn't be submitted. Please try again.", null, false);
                     $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/open/' . $this->get[0]);
                 }
             }
@@ -335,34 +339,55 @@ class ClientMain extends TicagaSupportController
         if ($ticket_information["ticket"] == null || $ticketBelongToClient == false && $ticket_information["ticket"]->user_id != '0')
 		{
 			$this->flashMessage('error', "Sorry this ticket hasn't been found on our system. Please contact our support.", null, false);
-			$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');	
+			$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');
 		}
-		
+
+            // The ticket owner's Ticaga customer id (0 for guest/public tickets)
+            $ticket_user_id = $ticket_information['ticket']->user_id ?: '0';
+
             if (!empty($this->post)) {
+                // A star rating submission carries a 'rating' field; a reply
+                // carries 'response_content'. Handle them separately.
+                if (isset($this->post['rating'])) {
+                    if ($ticket_information['ratings_enabled'] && $ticket_user_id != '0') {
+                        $rated = $this->TicagaTickets->rateTicket($this->get[0], $this->post['rating'], $ticket_user_id);
+                        if ($rated) {
+                            $this->flashMessage('message', "Thanks! Your rating has been saved.", null, false);
+                        } else {
+                            $this->flashMessage('error', "Sorry, your rating couldn't be saved.", null, false);
+                        }
+                    }
+                    $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/view/' . $this->get[0]);
+                }
+
                 $submitarray = [
-                    "user_id" => $ticket_information['ticket']->user_id ?: '0', 
-                    "ticket_number" => $this->get[0], 
-                    "content" => $this->post['response_content'], 
-                    "is_note" => '0', 
-                    "employee_response" => '0', 
+                    "user_id" => $ticket_user_id,
+                    "ticket_number" => $this->get[0],
+                    "content" => $this->post['response_content'],
+                    "is_note" => '0',
+                    "employee_response" => '0',
                     "organize" => 'blesta'
                 ];
                 $response_submit = $this->TicagaTickets->addReply($this->get[0], $submitarray);
                 if ($response_submit != false)
                 {
                     $this->flashMessage('message', "Ticket Updated successufully.", null, false);
-                    $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/view/' .  $this->get[0]);	
+                    $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/view/' .  $this->get[0]);
                 } else {
                     $this->flashMessage('error', "Sorry, this ticket can't be updated.", null, false);
                     $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/view/' . $this->get[0]);
                 }
             }
-		
+
             $this->set('ticket', $ticket_information["ticket"]);
+            $this->set('custom_fields', $ticket_information['custom_fields'] ?? null);
+            // Only offer rating on the customer's own (non-guest) tickets
+            $this->set('ratings_enabled', !empty($ticket_information['ratings_enabled']) && $ticket_user_id != '0');
+            $this->set('statuses', $this->TicagaTickets->getStatuses());
 
             $replies_information = $this->TicagaTickets->getReplies($this->get[0]);
             $this->set('replies', json_decode($replies_information, true));
-            
+
             return $this->view->setView('client_main_view', 'default');
             return $this->renderAjaxWidgetIfAsync(false);
     }

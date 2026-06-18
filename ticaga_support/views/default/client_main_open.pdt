@@ -21,6 +21,22 @@
 		$this->Widget->setStyleSheet($this->view_dir . "css/styles.css");
 		$this->WidgetClient->create($this->_('TicagaSupportPlugin.index.create_ticket', true));
 		$this->WidgetClient->startBody();
+
+		// Department closed notice (SLA business hours)
+		if (!empty($business_hours) && empty($business_hours['is_open'])) {
+		?>
+		<div class="tk-closed-banner">
+			<span class="tk-closed-icon">&#9201;</span>
+			<div>
+				<strong><?php echo $this->_('TicagaSupportPlugin.index.dept_closed', true); ?></strong>
+				<?php if (!empty($business_hours['message'])) { ?>
+					<div class="tk-closed-msg"><?php echo $this->Html->safe($business_hours['message']); ?></div>
+				<?php } ?>
+			</div>
+		</div>
+		<?php
+		}
+
 		$this->Form->create(null, ['id'=>'create_ticket_ticaga', 'enctype' => 'multipart/form-data', 'class' => 'disable-on-submit']);
 	?>
 		<?php

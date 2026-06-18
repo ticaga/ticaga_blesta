@@ -187,11 +187,13 @@ class TicagaSettings extends TicagaSupportModel
 	return array("response" => $result, "status" => "autherror");
 	} else if ($httprespcode == 404) {
 	return array("response" => $result, "status" => "notfound");
-	} else {
+	} else if ($httprespcode >= 200 && $httprespcode < 300) {
 	return array("response" => $result, "status" => "success");
+	} else {
+	return array("response" => $result, "status" => "error", "http_code" => $httprespcode);
 	}
 	}
-	
+
     /**
 	* Calls the API to do requested Actions(POST Request)
 	*
@@ -228,8 +230,10 @@ class TicagaSettings extends TicagaSupportModel
 	return array("response" => $result, "status" => "autherror");
 	} else if ($httprespcode == 404) {
 	return array("response" => $result, "status" => "notfound");
-	} else {
+	} else if ($httprespcode >= 200 && $httprespcode < 300) {
 	return array("response" => $result, "status" => "success");
+	} else {
+	return array("response" => $result, "status" => "error", "http_code" => $httprespcode);
 	}
 	}
 

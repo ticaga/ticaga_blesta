@@ -420,6 +420,9 @@ class TicagaSupportPlugin extends Plugin
         try {
             $params = is_object($event) && method_exists($event, 'getParams') ? $event->getParams() : [];
 
+            // TEMP DEBUG (remove once login linking is confirmed)
+            error_log('[TicagaSupport] Users.login fired. param keys: ' . json_encode(array_keys((array) $params)));
+
             // Resolve the id of the user that logged in (key varies by Blesta version)
             $user_id = null;
             if (!empty($params['user_id'])) {
@@ -431,6 +434,7 @@ class TicagaSupportPlugin extends Plugin
             }
 
             if (empty($user_id)) {
+                error_log('[TicagaSupport] Users.login: could not resolve a user id from params');
                 return;
             }
 
@@ -440,19 +444,24 @@ class TicagaSupportPlugin extends Plugin
                 ->where('clients.user_id', '=', $user_id)
                 ->fetch();
             if (!$client) {
+                error_log('[TicagaSupport] Users.login: no client found for user_id ' . $user_id . ' (staff login, or clients.user_id mismatch)');
                 return;
             }
 
+            // Force re-verify on login so a customer who has a Ticaga account but
+            // isn't actually linked gets linked (not just skipped on the local row).
             Loader::loadModels($this, ['TicagaSupport.TicagaTickets']);
-            $this->TicagaTickets->linkClient($client->id);
+            $result = $this->TicagaTickets->linkClient($client->id, true);
+            error_log('[TicagaSupport] Users.login: linkClient(' . $client->id . ') => ' . json_encode($result));
         } catch (Throwable $e) {
             // Never allow a Ticaga-side failure to interrupt the login
+            error_log('[TicagaSupport] Users.login handler error: ' . $e->getMessage());
             return;
         }
     }
 
 	public function getAPIInfoByCompanyIdProvided(){
-        $this->uses(['Record']);
+        // Record is already loaded in the constructor; $this->uses() does not exist on Plugin
         return $this->Record->select()->from("ticaga_settings")->where("ticaga_settings.company_id", "=", Configure::get('Blesta.company_id'))->fetch();
 	}
 	
