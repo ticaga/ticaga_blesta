@@ -817,7 +817,8 @@ div.reply .image-attachments {
 
 /* Reply box */
 .tk-reply { margin-top: 4px; }
-.tk-reply .btn { margin-top: 6px; }
+.tk-reply-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+.tk-reply-actions .btn { min-width: 96px; }
 
 @media (max-width: 575px) {
     .tk-meta { gap: 14px; }

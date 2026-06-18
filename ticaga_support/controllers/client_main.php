@@ -350,6 +350,17 @@ class ClientMain extends TicagaSupportController
             $ticket_user_id = $ticket_information['ticket']->user_id ?: '0';
 
             if (!empty($this->post)) {
+                // Close ticket request (carries 'close_ticket').
+                if (isset($this->post['close_ticket'])) {
+                    $closed = $this->TicagaTickets->closeTicket($this->get[0], $ticket_user_id);
+                    if ($closed) {
+                        $this->flashMessage('message', "This ticket has been closed.", null, false);
+                    } else {
+                        $this->flashMessage('error', "Sorry, this ticket couldn't be closed.", null, false);
+                    }
+                    $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/view/' . $this->get[0]);
+                }
+
                 // A star rating submission carries a 'rating' field; a reply
                 // carries 'response_content'. Handle them separately.
                 if (isset($this->post['rating'])) {

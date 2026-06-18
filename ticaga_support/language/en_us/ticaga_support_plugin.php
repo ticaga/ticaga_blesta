@@ -59,6 +59,8 @@ $lang['TicagaSupportPlugin.index.role_customer'] = "Customer";
 $lang['TicagaSupportPlugin.index.role_employee'] = "Employee";
 $lang['TicagaSupportPlugin.index.role_you'] = "You";
 $lang['TicagaSupportPlugin.index.submit_response'] = "Submit a response";
+$lang['TicagaSupportPlugin.index.close_ticket_btn'] = "Close ticket";
+$lang['TicagaSupportPlugin.index.close_confirm'] = "Are you sure you want to close this ticket?";
 $lang['TicagaSupportPlugin.index.ticket_closed'] = "This ticket is closed";
 $lang['TicagaSupportPlugin.index.ticket_closed_msg'] = "This ticket has been closed and can no longer receive replies. Please open a new ticket if you still need help.";
 

@@ -300,6 +300,28 @@ class TicagaTickets extends TicagaSupportModel
     }
 
     /**
+     * Closes a ticket via the Ticaga API on behalf of its owner.
+     *
+     * @param int $ticket_id The Ticaga ticket id to close
+     * @param int $customer_id The Ticaga customer id that owns the ticket ('0' for guest)
+     * @return bool True on success, false otherwise
+     */
+    public function closeTicket($ticket_id, $customer_id)
+    {
+        $api = $this->getAPIInfoByCompanyId();
+
+        $callvars = array(
+            'ticket_id' => $ticket_id,
+            'customer_id' => $customer_id,
+            'organize' => 'blesta'
+        );
+
+        $resp = $this->TicagaSettings->callAPIPost('tickets/close', $callvars, $api->api_url, $api->api_email, $api->api_key);
+
+        return ($resp['status'] ?? '') === 'success';
+    }
+
+    /**
      * Closes all open tickets (not "in_progress") based on the department settings
      *
      * @param int $department_id The ID of the department whose tickets to close
