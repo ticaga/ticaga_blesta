@@ -209,7 +209,8 @@
         <div class="tk-msg-body"><?php echo nl2br($this->Html->safe($ticket->message)); ?></div>
     </div>
 
-    <!-- Replies -->
+    <!-- Replies (refreshed in place on live updates) -->
+    <div id="tk-replies">
     <?php
         if (isset($replies) && !empty($replies)) {
             foreach ($replies as $reply) {
@@ -238,6 +239,7 @@
             }
         }
     ?>
+    </div><!-- /#tk-replies -->
 
     <!-- Reply box (hidden once the ticket is closed) -->
     <?php if ($status_raw === 'closed') { ?>
@@ -262,6 +264,56 @@
             </button>
         <?php $this->Form->end(); ?>
     </div>
+    <?php } ?>
+
+    <?php
+        // ----- Live updates (Reverb) ----------------------------------------
+        // When realtime is enabled and the ticket has a public hash, subscribe to
+        // the ticket's public channel and refresh the replies in place whenever a
+        // new reply is broadcast. The ping is content-free; the replies are
+        // re-rendered from the authenticated page, so nothing leaks over the socket.
+        if (!empty($realtime) && !empty($realtime['enabled']) && !empty($ticket->public_hash)) {
+            $rt_event = $realtime['event'] ?? 'reply.created';
+            $rt_channel = ($realtime['channel_prefix'] ?? 'ticket.') . $ticket->public_hash;
+    ?>
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script>
+    (function () {
+        if (typeof Pusher === 'undefined') { return; }
+        var refreshTimer = null;
+
+        function refreshReplies() {
+            fetch(window.location.href, { credentials: 'same-origin' })
+                .then(function (r) { return r.text(); })
+                .then(function (html) {
+                    var doc = new DOMParser().parseFromString(html, 'text/html');
+                    var fresh = doc.getElementById('tk-replies');
+                    var current = document.getElementById('tk-replies');
+                    if (fresh && current && fresh.innerHTML !== current.innerHTML) {
+                        current.innerHTML = fresh.innerHTML;
+                    }
+                })
+                .catch(function () {});
+        }
+
+        try {
+            var pusher = new Pusher(<?php echo json_encode($realtime['key']); ?>, {
+                wsHost: <?php echo json_encode($realtime['host']); ?>,
+                wsPort: <?php echo json_encode((int) $realtime['port']); ?>,
+                wssPort: <?php echo json_encode((int) $realtime['port']); ?>,
+                forceTLS: <?php echo (($realtime['scheme'] ?? 'https') === 'https') ? 'true' : 'false'; ?>,
+                enabledTransports: ['ws', 'wss'],
+                disableStats: true,
+                cluster: ''
+            });
+            var channel = pusher.subscribe(<?php echo json_encode($rt_channel); ?>);
+            channel.bind(<?php echo json_encode($rt_event); ?>, function () {
+                clearTimeout(refreshTimer);
+                refreshTimer = setTimeout(refreshReplies, 400);
+            });
+        } catch (e) { /* realtime unavailable; static view remains */ }
+    })();
+    </script>
     <?php } ?>
 
 </div>

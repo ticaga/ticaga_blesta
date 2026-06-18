@@ -384,6 +384,7 @@ class ClientMain extends TicagaSupportController
             }
 
             $this->set('ticket', $ticket_information["ticket"]);
+            $this->set('realtime', $this->TicagaTickets->getRealtimeConfig());
             $this->set('custom_fields', $ticket_information['custom_fields'] ?? null);
             // Only offer rating on the customer's own (non-guest) tickets
             $this->set('ratings_enabled', !empty($ticket_information['ratings_enabled']) && $ticket_user_id != '0');

@@ -48,7 +48,34 @@ class TicagaTickets extends TicagaSupportModel
     {
         return $this->Record->select()->from("ticaga_settings")->where("ticaga_settings.company_id", "=", Configure::get('Blesta.company_id'))->numResults();
     }
-	
+
+    /**
+     * Fetches the public Reverb connection details from Ticaga so the client
+     * ticket view can subscribe for live reply updates. Returns null when
+     * realtime is unavailable/disabled, so the view simply falls back to static.
+     *
+     * @return array|null ['enabled','key','host','port','scheme','channel_prefix','event']
+     */
+    public function getRealtimeConfig()
+    {
+        $api = $this->getAPIInfoByCompanyId();
+        if (!$api || empty($api->api_url)) {
+            return null;
+        }
+
+        $resp = $this->TicagaSettings->callAPI('realtime/config', $api->api_url, $api->api_email, $api->api_key);
+        if (($resp['status'] ?? '') !== 'success') {
+            return null;
+        }
+
+        $config = json_decode($resp['response'], true);
+        if (!is_array($config) || empty($config['enabled'])) {
+            return null;
+        }
+
+        return $config;
+    }
+
     // Function to get the client ip address
     public function get_client_ip_server() 
     {
