@@ -173,6 +173,14 @@ class ClientMain extends TicagaSupportController
             $this->set('cc_enabled', !isset($department_array['cc_enabled']) || $department_array['cc_enabled']);
             $this->set('custom_fields', $department_array['custom_fields'] ?? []);
 
+            // Optional "Related Service" dropdown: honour the per-department
+            // show_services toggle (defaults on when absent), then only show it
+            // when the customer actually has Blesta services to choose from.
+            $show_services = !isset($department_array['show_services']) || $department_array['show_services'];
+            $service_options = $show_services ? $this->getClientServiceOptions($client_id) : [];
+            $this->set('show_services', !empty($service_options));
+            $this->set('services', $service_options);
+
             $client_var = $this->Record->select()->from("ticaga_billing")->where("ticaga_billing.billing_userid", "=", $client_id)->fetch();
             $blesta_client = $this->Clients->get($client_id);
             $client_name = $blesta_client->first_name . " " . $blesta_client->last_name;
@@ -184,7 +192,17 @@ class ClientMain extends TicagaSupportController
                 $cid = $client_var->ticaga_userid ?: 0;
                 $ccid = $this->parseCarbonCopy($this->post['cc'] ?? '');
 
-                $submitarray = ["organize" => 'blesta', "department_slug" => $this->get[0], "client_id" => $cid, "priority" => $this->post['priority'], "subject" => $this->post["subject"], "message" => $message, "cc" => $ccid, 'client_email' => $email, 'public_name' => $client_name, 'custom_fields' => $this->post['custom_fields'] ?? []];
+                // Optional related service: only accept a service that belongs to
+                // this client; resolve its human label from the options we built.
+                $service_id = $this->post['service_id'] ?? '';
+                $service_name = '';
+                if ($service_id !== '' && $this->TicagaTickets->validateClientService($service_id, $client_id)) {
+                    $service_name = $service_options[$service_id] ?? '';
+                } else {
+                    $service_id = '';
+                }
+
+                $submitarray = ["organize" => 'blesta', "department_slug" => $this->get[0], "client_id" => $cid, "priority" => $this->post['priority'], "subject" => $this->post["subject"], "message" => $message, "cc" => $ccid, 'client_email' => $email, 'public_name' => $client_name, 'service_id' => $service_id, 'service_name' => $service_name, 'custom_fields' => $this->post['custom_fields'] ?? []];
                 $ticketsubmit = $this->TicagaTickets->add($submitarray);
 
                 if ($ticketsubmit != false) {
@@ -258,6 +276,47 @@ class ClientMain extends TicagaSupportController
             return $this->view->setView('client_main_open', 'default');
 		}
   	}
+
+	/**
+	 * Builds the "Related Service" dropdown options for a client, keyed by
+	 * Blesta service id with a human-readable label (package name, service
+	 * label, and status when not active). Empty when the client has no services.
+	 *
+	 * @param int $client_id The Blesta client id
+	 * @return array A map of service_id => label
+	 */
+	private function getClientServiceOptions($client_id)
+	{
+		if (!isset($this->Services)) {
+			$this->uses(['Services']);
+		}
+
+		$options = [];
+		$services = $this->Services->getAllByClient($client_id, 'all');
+		if (!is_array($services)) {
+			return $options;
+		}
+
+		foreach ($services as $service) {
+			$package_name = (isset($service->package) && isset($service->package->name)) ? $service->package->name : '';
+			$label = isset($service->name) ? $service->name : '';
+
+			if ($package_name !== '' && $label !== '' && $package_name !== $label) {
+				$display = $package_name . ' - ' . $label;
+			} else {
+				$display = $package_name !== '' ? $package_name : ($label !== '' ? $label : ('Service #' . $service->id));
+			}
+
+			// Flag non-active services so customers can tell them apart
+			if (!empty($service->status) && $service->status !== 'active') {
+				$display .= ' (' . ucfirst($service->status) . ')';
+			}
+
+			$options[$service->id] = $display;
+		}
+
+		return $options;
+	}
 
 	/**
 	 * Normalises the carbon-copy field (string or array) into an array of values.

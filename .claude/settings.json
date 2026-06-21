@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la)",
+      "Bash(ls -la app/Http/Controllers/Api/Two/)"
+    ]
+  }
+}

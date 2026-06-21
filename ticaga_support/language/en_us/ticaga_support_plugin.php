@@ -34,6 +34,9 @@ $lang['TicagaSupportPlugin.index.carbon_copy_placeholder'] = "Seperate Emails wi
 $lang['TicagaSupportPlugin.index.priority'] = "Priority";
 $lang['TicagaSupportPlugin.index.ticket_response'] = "Ticket response";
 $lang['TicagaSupportPlugin.index.create'] = "Create";
+$lang['TicagaSupportPlugin.index.related_service'] = "Related Service";
+$lang['TicagaSupportPlugin.index.optional'] = "(Optional)";
+$lang['TicagaSupportPlugin.index.select_service'] = "Select a service (optional)";
 
 // Ticket Overview
 $lang['TicagaSupportPlugin.index.tickets_overview'] = "Tickets Overview";

@@ -90,6 +90,18 @@
                 $this->Form->fieldTextarea('message', null, ['id' => 'message', 'rows' => 5, 'class' => 'form-control', 'data-markdown-editor' => '']);
             ?>
         </div>
+		<?php if (!empty($show_services) && !empty($services)) { ?>
+		<div class="form-group">
+			<?php
+				$this->Form->label(
+					$this->_('TicagaSupportPlugin.index.related_service', true) . ' ' . $this->_('TicagaSupportPlugin.index.optional', true),
+					"service_id"
+				);
+				$service_opts = ['' => $this->_('TicagaSupportPlugin.index.select_service', true)] + $services;
+				$this->Form->fieldSelect('service_id', $service_opts, null, ['id' => 'service_id', 'class' => 'form-control']);
+			?>
+		</div>
+		<?php } ?>
 		<?php
 			// Department custom fields (only those visible to the customer)
 			require_once dirname(__FILE__) . '/custom_field_helper.php';

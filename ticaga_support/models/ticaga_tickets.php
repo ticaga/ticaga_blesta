@@ -125,13 +125,17 @@ class TicagaTickets extends TicagaSupportModel
 		$billing_company_id = Configure::get('Blesta.company_id');
 		// Custom field values keyed by field slug (validated/saved server-side)
 		$custom_fields = $vars['custom_fields'] ?? [];
+		// The specific Blesta service this ticket relates to (optional). Sent so
+		// Ticaga can section/map the ticket to a product; '' when not selected.
+		$billing_service_id = $vars['service_id'] ?? '';
+		$billing_service_name = $vars['service_name'] ?? '';
 
 		if ($cc != "null")
 		{
             $ccid = implode(",", $cc);
-            $callvars = array('organize' => 'blesta', 'customer_id' => $client_id, "subject" => $vars['subject'], "priority" => $vars['priority'], "message" => $vars["message"], "cc" => $ccid, "assigned" => "0", "department_slug" => $vars['department_slug'], "ip_address" => $ip_address, 'public_email' => $vars["client_email"], 'public_name' => $vars["public_name"], 'billing_system' => $billing_system, 'billing_company_id' => $billing_company_id, 'custom_fields' => $custom_fields);
+            $callvars = array('organize' => 'blesta', 'customer_id' => $client_id, "subject" => $vars['subject'], "priority" => $vars['priority'], "message" => $vars["message"], "cc" => $ccid, "assigned" => "0", "department_slug" => $vars['department_slug'], "ip_address" => $ip_address, 'public_email' => $vars["client_email"], 'public_name' => $vars["public_name"], 'billing_system' => $billing_system, 'billing_company_id' => $billing_company_id, 'billing_service_id' => $billing_service_id, 'billing_service_name' => $billing_service_name, 'custom_fields' => $custom_fields);
 		} else {
-		    $callvars = array('organize' => 'blesta', 'customer_id' => $client_id, "subject" => $vars['subject'], "priority" => $vars['priority'], "message" => $vars["message"], "assigned" => "0", "department_slug" => $vars['department_slug'], "ip_address" => $ip_address, 'public_email' => $vars["client_email"], 'public_name' => null, 'billing_system' => $billing_system, 'billing_company_id' => $billing_company_id, 'custom_fields' => $custom_fields);
+		    $callvars = array('organize' => 'blesta', 'customer_id' => $client_id, "subject" => $vars['subject'], "priority" => $vars['priority'], "message" => $vars["message"], "assigned" => "0", "department_slug" => $vars['department_slug'], "ip_address" => $ip_address, 'public_email' => $vars["client_email"], 'public_name' => null, 'billing_system' => $billing_system, 'billing_company_id' => $billing_company_id, 'billing_service_id' => $billing_service_id, 'billing_service_name' => $billing_service_name, 'custom_fields' => $custom_fields);
 		}
 
 		$resp = $this->TicagaSettings->callAPIPost("tickets/create", $callvars, $api->api_url, $api->api_email, $api->api_key);
