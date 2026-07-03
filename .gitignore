@@ -1,6 +1,7 @@
 # Build artifacts / packaged plugin
 *.zip
-
+.claude
+.idea
 # OS files
 .DS_Store
 Thumbs.db
