@@ -101,7 +101,7 @@ class TicagaTickets extends TicagaSupportModel
      *  - client_id The ID of the client this ticket is assigned to (optional)
      *  - email The email address that a ticket was emailed in from (optional)
      *  - summary A brief title/summary of the ticket issue
-     *  - priority The ticket priority (i.e. "emergency", "critical", "high", "medium", "low") (optional, default "low")
+     *  - priority The ticket priority (i.e. "emergency", "high", "medium", "low", "none") (optional, default "low")
      *  - status The status of the ticket
      *  (i.e. "open", "awaiting_reply", "in_progress", "on_hold", "closed", "trash") (optional, default "open")
      *  - custom_fields An array containing the ticket custom fields, where the key is the field id
@@ -223,7 +223,7 @@ class TicagaTickets extends TicagaSupportModel
      *  - service_id The ID of the client service this ticket relates to
      *  - client_id The ID of the client this ticket is to be assigned to (can only be set if it is currently null)
      *  - summary A brief title/summary of the ticket issue
-     *  - priority The ticket priority (i.e. "emergency", "critical", "high", "medium", "low")
+     *  - priority The ticket priority (i.e. "emergency", "high", "medium", "low", "none")
      *  - status The status of the ticket (i.e. "open", "awaiting_reply", "in_progress", "on_hold", "closed", "trash")
      *  - by_staff_id The ID of the staff member performing the edit
      *      (optional, defaults to null to signify the edit is performed by the client)
@@ -265,7 +265,7 @@ class TicagaTickets extends TicagaSupportModel
      *  - service_id The ID of the client service this ticket relates to
      *  - client_id The ID of the client this ticket is to be assigned to (can only be set if it is currently null)
      *  - summary A brief title/summary of the ticket issue
-     *  - priority The ticket priority (i.e. "emergency", "critical", "high", "medium", "low")
+     *  - priority The ticket priority (i.e. "emergency", "high", "medium", "low", "none")
      *  - status The status of the ticket (i.e. "open", "awaiting_reply", "in_progress", "on_hold", "closed", "trash")
      *  - by_staff_id The ID of the staff member performing the edit
      *      (optional, defaults to null to signify the edit is performed by the client)
@@ -509,9 +509,13 @@ class TicagaTickets extends TicagaSupportModel
         $callvars = array('ticket_id' => $code);
         $resp = $this->TicagaSettings->callAPIPost("tickets/info", $callvars, $apiURL,$apiEmail,$apiKey);
 
-        if ($resp)
+        if (($resp['status'] ?? '') === 'success')
         {
             $ticket_info = json_decode($resp['response']);
+            if (!$ticket_info || empty($ticket_info->tickets)) {
+                return false;
+            }
+
             return array(
                 "ticket" => $ticket_info->tickets ?? null,
                 // Custom fields (when the Ticaga CustomFields extension is enabled
@@ -563,6 +567,10 @@ class TicagaTickets extends TicagaSupportModel
         $client_id = $this->client_id ?? $this->Session->read("blesta_client_id");
 
 		$client_var = $this->Record->select()->from("ticaga_billing")->where("ticaga_billing.billing_userid", "=", $client_id)->fetch();
+
+        if (!$client_var || !isset($client_var->ticaga_userid)) {
+            return false;
+        }
 
         if ($client_var->ticaga_userid == $ticket_user_id)
         {
@@ -1101,7 +1109,7 @@ class TicagaTickets extends TicagaSupportModel
 		$apiURL = $this->getAPIInfoByCompanyId($company_id)->api_url;
 		$apiEmail = $this->getAPIInfoByCompanyId($company_id)->api_email;
 
-		$resp = $this->TicagaSettings->callAPI("departments/get/" . $department_slug,$apiURL,$apiEmail,$apiKey);
+		$resp = $this->TicagaSettings->callAPI("departments/get/" . rawurlencode($department_slug),$apiURL,$apiEmail,$apiKey);
         $resp_test = $this->TicagaSettings->validateAPISuccessResponse($resp);
         
 		if ($resp)
@@ -1200,7 +1208,6 @@ class TicagaTickets extends TicagaSupportModel
 			} else {
 			$priorities = [
                 'emergency' => $this->_('TicagaDepartments.priorities.emergency'),
-                'critical' => $this->_('TicagaDepartments.priorities.critical'),
                 'high' => $this->_('TicagaDepartments.priorities.high'),
                 'medium' => $this->_('TicagaDepartments.priorities.medium'),
                 'low' => $this->_('TicagaDepartments.priorities.low')

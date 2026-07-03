@@ -202,7 +202,7 @@ class ClientMain extends TicagaSupportController
                     $service_id = '';
                 }
 
-                $submitarray = ["organize" => 'blesta', "department_slug" => $this->get[0], "client_id" => $cid, "priority" => $this->post['priority'], "subject" => $this->post["subject"], "message" => $message, "cc" => $ccid, 'client_email' => $email, 'public_name' => $client_name, 'service_id' => $service_id, 'service_name' => $service_name, 'custom_fields' => $this->post['custom_fields'] ?? []];
+                $submitarray = ["organize" => 'blesta', "department_slug" => $this->get[0], "client_id" => $cid, "priority" => $this->normalizePriority($this->post['priority'] ?? 'none'), "subject" => $this->post["subject"], "message" => $message, "cc" => $ccid, 'client_email' => $email, 'public_name' => $client_name, 'service_id' => $service_id, 'service_name' => $service_name, 'custom_fields' => $this->post['custom_fields'] ?? []];
                 $ticketsubmit = $this->TicagaTickets->add($submitarray);
 
                 if ($ticketsubmit != false) {
@@ -249,7 +249,7 @@ class ClientMain extends TicagaSupportController
             $this->set('custom_fields', $department_array['custom_fields'] ?? []);
 
             if (!empty($this->post)) {
-                $priority = $this->post['priority'] ?? 'none';
+                $priority = $this->normalizePriority($this->post['priority'] ?? 'none');
                 $message = $this->post['message'];
                 $email = !empty($this->post['email']) ? $this->post['email'] : $prefill_email;
                 $client_name = !empty($this->post['public_name']) ? $this->post['public_name'] : $prefill_name;
@@ -261,10 +261,13 @@ class ClientMain extends TicagaSupportController
                 if ($ticketsubmit) {
                     $reference = $this->extractTicketReference($ticketsubmit);
                     $success = "Success! Your ticket has been sent to our team.";
-                    if ($reference) {
-                        $success .= " Your reference is " . $reference . " — please keep it to track your ticket.";
+                    if (!empty($reference['display'])) {
+                        $success .= " Your reference is " . $reference['display'] . " — please keep it to track your ticket.";
                     }
                     $this->flashMessage('message', $success, null, false);
+                    if (!empty($reference['id']) && !empty($reference['hash'])) {
+                        $this->redirect($this->ticketViewPath($reference['id'], $reference['hash']));
+                    }
                     $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');
                 } else {
                     $error = $this->TicagaTickets->getLastError();
@@ -335,23 +338,49 @@ class ClientMain extends TicagaSupportController
 		return [];
 	}
 
+	private function normalizePriority($priority)
+	{
+		$priority = strtolower((string) $priority);
+		$allowed = ['none', 'low', 'medium', 'high', 'emergency'];
+		return in_array($priority, $allowed, true) ? $priority : 'none';
+	}
+
 	/**
 	 * Extracts a public reference (hash, falling back to id) from a ticket
 	 * creation response so a guest can track their ticket.
 	 *
 	 * @param mixed $ticketsubmit The decoded API response from TicagaTickets::add()
-	 * @return string|null The reference, or null if none could be determined
+	 * @return array|null The reference parts, or null if none could be determined
 	 */
 	private function extractTicketReference($ticketsubmit)
 	{
 		if (is_object($ticketsubmit) && isset($ticketsubmit->id)) {
 			$ticket = $ticketsubmit->id;
 			if (is_object($ticket)) {
-				return $ticket->public_hash ?? ($ticket->id ?? null);
+				$id = $ticket->id ?? null;
+				$hash = $ticket->public_hash ?? null;
+				return [
+					'id' => $id,
+					'hash' => $hash,
+					'display' => $ticket->ticket_code ?? $id ?? $hash,
+				];
 			}
-			return $ticket;
+			return [
+				'id' => $ticket,
+				'hash' => null,
+				'display' => $ticket,
+			];
 		}
 		return null;
+	}
+
+	private function ticketViewPath($ticket_id, $public_hash = null)
+	{
+		$path = $this->base_uri . 'plugin/ticaga_support/client_main/view/' . rawurlencode($ticket_id);
+		if ($public_hash) {
+			$path .= '/' . rawurlencode($public_hash);
+		}
+		return $path;
 	}
   
   	/**
@@ -394,74 +423,97 @@ class ClientMain extends TicagaSupportController
     public function view()
     {
         // Check the ticket ID is valid and return the ticket information.
-        $ticket_information = $this->TicagaTickets->getTicketByCode($this->get[0]);
+        $ticket_id = $this->get[0] ?? null;
+        if (!$ticket_id) {
+            $this->flashMessage('error', "Sorry this ticket hasn't been found on our system. Please contact our support.", null, false);
+            $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');
+        }
 
-        // Does the user exist in the database?
-		$ticketBelongToClient = $this->TicagaTickets->doesTicketBelongToClient($ticket_information["ticket"]->user_id);
-        
-        if ($ticket_information["ticket"] == null || $ticketBelongToClient == false && $ticket_information["ticket"]->user_id != '0')
-		{
+        $ticket_information = $this->TicagaTickets->getTicketByCode($ticket_id);
+
+        if (!$ticket_information || empty($ticket_information["ticket"])) {
 			$this->flashMessage('error', "Sorry this ticket hasn't been found on our system. Please contact our support.", null, false);
 			$this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');
 		}
 
-            // The ticket owner's Ticaga customer id (0 for guest/public tickets)
-            $ticket_user_id = $ticket_information['ticket']->user_id ?: '0';
+        $ticket = $ticket_information["ticket"];
+        $ticket_user_id = $ticket->user_id ?: '0';
+        $is_guest_ticket = ((string) $ticket_user_id === '0');
+        
+        if ($is_guest_ticket) {
+            $submitted_hash = $this->get[1] ?? null;
+            $ticket_hash = $ticket->public_hash ?? null;
+            if (!$submitted_hash || !$ticket_hash || !hash_equals((string) $ticket_hash, (string) $submitted_hash)) {
+                $this->flashMessage('error', "Sorry this ticket hasn't been found on our system. Please contact our support.", null, false);
+                $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');
+            }
+        } elseif (!$this->TicagaTickets->doesTicketBelongToClient($ticket_user_id)) {
+            $this->flashMessage('error', "Sorry this ticket hasn't been found on our system. Please contact our support.", null, false);
+            $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/index');
+        }
+
+            $view_path = $this->ticketViewPath($ticket_id, $is_guest_ticket ? ($ticket->public_hash ?? null) : null);
 
             if (!empty($this->post)) {
                 // Close ticket request (carries 'close_ticket').
                 if (isset($this->post['close_ticket'])) {
-                    $closed = $this->TicagaTickets->closeTicket($this->get[0], $ticket_user_id);
+                    $closed = $this->TicagaTickets->closeTicket($ticket_id, $ticket_user_id);
                     if ($closed) {
                         $this->flashMessage('message', "This ticket has been closed.", null, false);
                     } else {
                         $this->flashMessage('error', "Sorry, this ticket couldn't be closed.", null, false);
                     }
-                    $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/view/' . $this->get[0]);
+                    $this->redirect($view_path);
                 }
 
                 // A star rating submission carries a 'rating' field; a reply
                 // carries 'response_content'. Handle them separately.
                 if (isset($this->post['rating'])) {
                     if ($ticket_information['ratings_enabled'] && $ticket_user_id != '0') {
-                        $rated = $this->TicagaTickets->rateTicket($this->get[0], $this->post['rating'], $ticket_user_id);
+                        $rated = $this->TicagaTickets->rateTicket($ticket_id, $this->post['rating'], $ticket_user_id);
                         if ($rated) {
                             $this->flashMessage('message', "Thanks! Your rating has been saved.", null, false);
                         } else {
                             $this->flashMessage('error', "Sorry, your rating couldn't be saved.", null, false);
                         }
                     }
-                    $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/view/' . $this->get[0]);
+                    $this->redirect($view_path);
+                }
+
+                $response_content = trim($this->post['response_content'] ?? '');
+                if ($response_content === '') {
+                    $this->flashMessage('error', "Please enter a reply before submitting.", null, false);
+                    $this->redirect($view_path);
                 }
 
                 $submitarray = [
                     "user_id" => $ticket_user_id,
-                    "ticket_number" => $this->get[0],
-                    "content" => $this->post['response_content'],
+                    "ticket_number" => $ticket_id,
+                    "content" => $response_content,
                     "is_note" => '0',
                     "employee_response" => '0',
                     "organize" => 'blesta'
                 ];
-                $response_submit = $this->TicagaTickets->addReply($this->get[0], $submitarray);
+                $response_submit = $this->TicagaTickets->addReply($ticket_id, $submitarray);
                 if ($response_submit != false)
                 {
                     $this->flashMessage('message', "Ticket Updated successufully.", null, false);
-                    $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/view/' .  $this->get[0]);
+                    $this->redirect($view_path);
                 } else {
                     $this->flashMessage('error', "Sorry, this ticket can't be updated.", null, false);
-                    $this->redirect($this->base_uri . 'plugin/ticaga_support/client_main/view/' . $this->get[0]);
+                    $this->redirect($view_path);
                 }
             }
 
-            $this->set('ticket', $ticket_information["ticket"]);
+            $this->set('ticket', $ticket);
             $this->set('realtime', $this->TicagaTickets->getRealtimeConfig());
             $this->set('custom_fields', $ticket_information['custom_fields'] ?? null);
             // Only offer rating on the customer's own (non-guest) tickets
             $this->set('ratings_enabled', !empty($ticket_information['ratings_enabled']) && $ticket_user_id != '0');
             $this->set('statuses', $this->TicagaTickets->getStatuses());
 
-            $replies_information = $this->TicagaTickets->getReplies($this->get[0]);
-            $this->set('replies', json_decode($replies_information, true));
+            $replies_information = $this->TicagaTickets->getReplies($ticket_id);
+            $this->set('replies', $replies_information ? json_decode($replies_information, true) : []);
 
             return $this->view->setView('client_main_view', 'default');
             return $this->renderAjaxWidgetIfAsync(false);

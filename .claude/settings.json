@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(ls -la)",
-      "Bash(ls -la app/Http/Controllers/Api/Two/)"
+      "Bash(ls -la app/Http/Controllers/Api/Two/)",
+      "Bash(rm -f blesta-ticaga-plugin.zip)",
+      "Bash(zip -r -X blesta-ticaga-plugin.zip ticaga_support -x '*.DS_Store')",
+      "Bash(unzip -p blesta-ticaga-plugin.zip ticaga_support/views/default/client_main_submitticket.pdt)"
     ]
   }
 }

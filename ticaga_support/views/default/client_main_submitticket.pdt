@@ -75,7 +75,7 @@
 
 					$this->Form->label($this->_('TicagaSupportPlugin.index.priority',true), "priority");
 					if ($is_highpriority_allowed == true) {
-						$priorities = ["low" => "Low", "medium" => "Medium",'high' => "High", 'critical' => 'Critical', 'emergency' => 'Emergency'];
+						$priorities = ["low" => "Low", "medium" => "Medium", 'high' => "High", 'emergency' => 'Emergency'];
 					} else {
 						$priorities = ["low" => "Low","medium" => "Medium"];	
 					}

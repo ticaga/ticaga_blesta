@@ -36,7 +36,6 @@
         $priority_raw = isset($ticket->priority) ? $ticket->priority : '';
         $priority_classes = [
             'emergency' => 'tk-badge-danger',
-            'critical' => 'tk-badge-danger',
             'high' => 'tk-badge-danger',
             'medium' => 'tk-badge-warning',
             'low' => 'tk-badge-success',
